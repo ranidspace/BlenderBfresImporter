@@ -131,6 +131,8 @@ class MeshImporter:
             except IndexError:
                 log.error("LOD submesh face %d is out of bounds (max %d)", i, len(idxs))
                 raise
+            except ValueError:
+                pass
 
     def _create_faces_point_list(self, idxs, mesh):
         return self.__create_faces_basic(idxs, mesh, 1, 1)
