@@ -1,0 +1,3 @@
+[submodule "submodules/bfrespy"]
+	path = submodules/bfrespy
+	url = https://github.com/ranidspace/bfrespy.git
