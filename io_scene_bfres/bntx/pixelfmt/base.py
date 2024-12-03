@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 
 types = {  # name => id, bytes per pixel
     'R5G6B5': {'id': 0x07, 'bpp': 2},
+    'R8': {'id': 0x02, 'bpp': 1},
     'R8G8': {'id': 0x09, 'bpp': 2},
     'R16': {'id': 0x0A, 'bpp': 2},
     'R8G8B8A8': {'id': 0x0B, 'bpp': 4},
@@ -65,11 +66,11 @@ class TextureFormat:
     def decompress(self, tex):
         bpp = self.bytes_per_pixel
         data = tex.mip_data
-        pixels = bytearray(tex.mip_data)
+        pixels = bytes(tex.mip_data)
         log.debug("Texture: %d bytes/pixel, %dx%d = %d, len = %d",
                   bpp, tex.width, tex.height, tex.width * tex.height * bpp,
                   len(data))
-        return bytes(pixels)
+        return pixels
 
     @staticmethod
     def decodepixels(data):

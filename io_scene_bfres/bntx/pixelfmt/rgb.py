@@ -18,6 +18,21 @@ import logging
 log = logging.getLogger(__name__)
 
 
+class R8(TextureFormat):
+    id = 0x02
+    bytes_per_pixel = 1
+
+    @staticmethod
+    def decodepixels(data):
+        pixels = np.frombuffer(data, dtype='B') / 255
+        rgba = np.empty((pixels.size * 4), dtype=pixels.dtype)
+        rgba[0::4] = pixels
+        rgba[1::4] = pixels
+        rgba[2::4] = pixels
+        rgba[3::4] = 1
+        return rgba
+
+
 class R5G6B5(TextureFormat):
     # XXX untested code, needs confirmation
     id = 0x07
