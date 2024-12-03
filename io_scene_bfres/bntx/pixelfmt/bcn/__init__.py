@@ -123,7 +123,8 @@ class BC4(TextureFormat):
     @staticmethod
     def decodepixels(data):
         rgba = np.empty(len(data) * 4)
-        rgba[0::4] = rgba[1::4] = rgba[2::4] = np.frombuffer(data, dtype='B') / 255
+        rgba[0::4] = rgba[1::4] = rgba[2::4] = np.frombuffer(
+            data, dtype='B') / 255
         rgba[3::4] = 1
         return rgba
 
