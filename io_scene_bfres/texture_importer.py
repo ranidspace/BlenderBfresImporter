@@ -73,12 +73,14 @@ class TextureImporter:
                     dir = bpy.utils.extension_path_user(__package__, path=self.parent.bfres.name, create=True)
                 else:
                     dir = bpy.utils.extension_path_user(__package__, path='bntx', create=True)
-                image.filepath_raw = "%s/%s.png" % (
-                    dir, tex.name)
                 if tex.fmt_dtype.name in ['UHALF', 'SINGLE']:
-                    image.file_format = 'EXR'
+                    image.file_format = 'OPEN_EXR'
+                    image.filepath_raw = "%s/%s.exr" % (
+                        dir, tex.name)
                 else:
                     image.file_format = 'PNG'
+                    image.filepath_raw = "%s/%s.png" % (
+                        dir, tex.name)
                 log.info("Saving image to %s", image.filepath_raw)
                 image.save()
 
