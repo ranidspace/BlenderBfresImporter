@@ -62,6 +62,13 @@ class TextureImporter:
                         case 5:
                             pixels[ch::4] = temppix[3::4]
 
+            # Add some file data if it's needed:
+            if tex.fmt_dtype.name in ['UHALF', 'SINGLE']:
+                image.file_format = 'OPEN_EXR'
+                image.colorspace_settings.name = 'sRGB'
+            else:
+                image.file_format = 'PNG'
+
             # flip image from dx to gl
             pixels = np.flipud(pixels.reshape((tex.height, tex.width, 4)))
 
@@ -73,12 +80,11 @@ class TextureImporter:
                     dir = bpy.utils.extension_path_user(__package__, path=self.parent.bfres.name, create=True)
                 else:
                     dir = bpy.utils.extension_path_user(__package__, path='bntx', create=True)
-                if tex.fmt_dtype.name in ['UHALF', 'SINGLE']:
-                    image.file_format = 'OPEN_EXR'
+
+                if image.file_format == 'OPEN_EXR':
                     image.filepath_raw = "%s/%s.exr" % (
                         dir, tex.name)
                 else:
-                    image.file_format = 'PNG'
                     image.filepath_raw = "%s/%s.png" % (
                         dir, tex.name)
                 log.info("Saving image to %s", image.filepath_raw)
