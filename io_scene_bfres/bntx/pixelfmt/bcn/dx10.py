@@ -529,6 +529,8 @@ class BC7(TextureFormat):
         modeval = start[0] - 1
         mode = BC7.modes[modeval]
 
+        color_bits = mode.color_bits
+        alpha_bits = mode.alpha_bits
         cw = get_weights(mode.idx_bpe)
         aw = get_weights(
             mode.idx_bpe2
@@ -561,38 +563,42 @@ class BC7(TextureFormat):
                            if mode.alpha_bits == 0
                            else getbits(data, pos, start, mode.alpha_bits))
 
-            # Adjust for P bits
+            # Adjust for endpoint P-bits
             if mode.end_pbits:
-                for i in range(num_end_points):
-                    if (start[0] > 127):
-                        raise IndexError("BC7 decompressor out of range")
+                color_bits += 1
+                if alpha_bits:
+                    alpha_bits += 1
 
+                for i in range(num_end_points):
                     p = getbit(data, pos, start)
+                    c[i][0] = BC7.assign_p(c[i][0], p)
+                    c[i][1] = BC7.assign_p(c[i][1], p)
+                    c[i][2] = BC7.assign_p(c[i][2], p)
+                    if alpha_bits:
+                        c[i][3] = BC7.assign_p(c[i][3], p)
 
-                    c[i][0] = (c[i][0] << 1) | p
-                    c[i][1] = (c[i][1] << 1) | p
-                    c[i][2] = (c[i][2] << 1) | p
-                    if mode.alpha_bits:
-                        c[i][3] = (c[i][3] << 1) | p
+            # Adjust for shared P-bits
+            if mode.shared_pbits:
+                color_bits += 1
+                if alpha_bits:
+                    alpha_bits += 1
 
-            elif mode.shared_pbits:
-                p = [0, 0]
-                p[0] = getbit(data, pos, start)
-                p[1] = getbit(data, pos, start)
-                for i in range(num_end_points):
-                    end = i & 1
-                    c[i][0] = (c[i][0] << 1) | p[end]
-                    c[i][1] = (c[i][1] << 1) | p[end]
-                    c[i][2] = (c[i][2] << 1) | p[end]
-                    if mode.alpha_bits:
-                        c[i][3] = (c[i][3] << 1) | p[end]
+                for i in range(0, num_end_points, 2):
+                    p = getbit(data, pos, start)
+                    for j in range(2):
+                        c[i + j][0] = BC7.assign_p(c[i + j][0], p)
+                        c[i + j][1] = BC7.assign_p(c[i + j][1], p)
+                        c[i + j][2] = BC7.assign_p(c[i + j][2], p)
+                        if alpha_bits:
+                            c[i + j][3] = BC7.assign_p(c[i + j][3], p)
 
+            # Unquantize all values
             for i in range(num_end_points):
-                c[i] = BC7.unquantise(
-                    c[i],
-                    mode.color_bits + (mode.end_pbits | mode.shared_pbits),
-                    mode.alpha_bits + mode.end_pbits
-                )
+                c[i][0] = BC7.unquantise(c[i][0], color_bits)
+                c[i][1] = BC7.unquantise(c[i][1], color_bits)
+                c[i][2] = BC7.unquantise(c[i][2], color_bits)
+                if alpha_bits:
+                    c[i][3] = BC7.unquantise(c[i][3], alpha_bits)
 
             # Read colour indices
             cibit = [start[0]]
@@ -651,20 +657,9 @@ class BC7(TextureFormat):
         return outcolours
 
     @staticmethod
-    def unquantise_ch(r1: int, r2: int) -> int:
+    def unquantise(r1: int, r2: int) -> int:
         temp = r1 << (8 - r2)
         return temp | (temp >> r2)
-
-    @staticmethod
-    def unquantise(color: bytearray, col_bits: int, alpha_bits: int) -> bytearray:
-        temp = bytearray(4)
-        for i in range(3):
-            temp[i] = BC7.unquantise_ch(color[i], col_bits)
-
-        temp[3] = (BC7.unquantise_ch(color[3], alpha_bits)
-                   if alpha_bits > 0
-                   else 255)
-        return temp
 
     @staticmethod
     def interpolate(
@@ -677,3 +672,7 @@ class BC7(TextureFormat):
         temp[2] = ((t0 * e[0][2] + s0 * e[1][2] + 32) >> 6)
         temp[3] = ((t1 * e[0][3] + s1 * e[1][3] + 32) >> 6)
         return temp
+
+    @staticmethod
+    def assign_p(x, val):
+        return (x << 1) | val
