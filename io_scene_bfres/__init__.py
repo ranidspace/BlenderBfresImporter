@@ -139,7 +139,7 @@ class ImportBFRES(bpy.types.Operator, ImportHelper):
                 importer = Importer(self, context, path)
                 importer.run()
 
-        log.info("importing: %s", self.properties.filepath)
+        log.info("importing: %s", path)
         importer = Importer(self, context, path)
         return importer.run()
 
@@ -178,7 +178,8 @@ def import_panel_misc(layout, operator):
 
 def menu_func_import(self, context):
     self.layout.operator_context = 'INVOKE_DEFAULT'
-    self.layout.operator(ImportBFRES.bl_idname, text="Nintendo Switch BFRES (.bfres/.szs/.zs)")
+    self.layout.operator(ImportBFRES.bl_idname,
+                         text="Nintendo Switch BFRES (.bfres/.szs/.zs)")
 
 # def menu_func_export(self, context):
 #    self.layout.operator(ExportBFRES.bl_idname, text="Nintendo Switch BFRES (.bfres)")
