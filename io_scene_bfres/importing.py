@@ -100,11 +100,15 @@ class Importer:
             obj = bpy.data.texts.new(name=name)
             obj.write(file.data.decode('utf-8'))
         else:
-            try:
-                self._load_stream(io.BytesIO(file.data))
-            except UnsupportedFileTypeError as ex:
-                log.debug(("Embedded file '%s' is of unsupported type '%s'",
-                           file.name, ex.magic))
+            if (file.data):
+                try:
+                    self._load_stream(io.BytesIO(file.data))
+                except UnsupportedFileTypeError as ex:
+                    log.debug("Embedded file '%s' is of unsupported type '%s'",
+                              name, ex.magic)
+            else:
+                log.debug("Embedded file '%s' is empty",
+                          name)
 
     @staticmethod
     def _get_from_sarc(raw: io.BytesIO | io.BufferedReader):
