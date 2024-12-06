@@ -61,7 +61,7 @@ class MeshImporter:
         mdata = mesh_ob.data
 
         mat = self.fmdl.materials[self.fshp.material_idx]
-        mdata.materials.append(bpy.data.materials[mat.name])
+        mdata.materials.append(self.parent.material_map[mat.name])
 
         return mesh_ob
 

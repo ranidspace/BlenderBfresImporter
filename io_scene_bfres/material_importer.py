@@ -16,9 +16,11 @@ class MaterialImporter:
         self.operator = parent.operator
         self.context = parent.context
 
-    def import_material(self, fmat):
+    def import_material(self, fmat, material_dict):
         """Import specified material from fmat."""
         mat = bpy.data.materials.new(name=fmat.name)
+        material_dict[fmat.name] = mat
+        mat.name
         mat.use_nodes = True
         mat_wrap = PrincipledBSDFWrapper(mat, is_readonly=False)
         self.__add_custom_properties(fmat, mat)
