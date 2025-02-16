@@ -15,8 +15,9 @@ class MaterialImporter:
         self.fmdl = fmdl
         self.operator = parent.operator
         self.context = parent.context
+        self.texture_map: dict
 
-    def import_material(self, fmat, material_dict):
+    def import_material(self, fmat, texture_dict, material_dict):
         """Import specified material from fmat."""
         mat = bpy.data.materials.new(name=fmat.name)
         material_dict[fmat.name] = mat
@@ -29,13 +30,19 @@ class MaterialImporter:
         i = 0
         for sampler, tex_sampler in fmat.samplers.items():
             texName = fmat.texture_refs[i].name
-            tex_sampler_name = fmat.shader_assign.sampler_assigns.try_get_key(ResString(sampler))
-            i += 1
-
-            if ((image := bpy.data.images.get(texName)) is None):
+            if (texName in texture_dict):
+                image = texture_dict[texName]
+            else:
+                image = bpy.data.images.get(texName)
+            
+            if (image is None):
                 log.warning("Missing Texture: '%s'",
                             texName)
                 continue
+
+
+            tex_sampler_name = fmat.shader_assign.sampler_assigns.try_get_key(ResString(sampler))
+            i += 1
 
             # Get the bpy Texture Wrapper from the sampler name
             tex_helper_name = self._get_tex_wrapper.get(tex_sampler_name)

@@ -87,7 +87,7 @@ class Importer:
 
         from .texture_importer import TextureImporter
         tex_imp = TextureImporter(self)
-        tex_imp.import_textures(bntx_)
+        self.texture_map = tex_imp.import_textures(bntx_)
 
         return {'FINISHED'}
 
