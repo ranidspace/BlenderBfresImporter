@@ -19,6 +19,7 @@ class ModelImporter:
     def __init__(self, parent):
         self.operator = parent.operator
         self.context = parent.context
+        self.texture_map = parent.texture_map
         self.material_map: dict
 
     def _convert_fmdl(self, fmdl, collection):
@@ -31,7 +32,7 @@ class ModelImporter:
         for i, fmat in enumerate(fmdl.materials.values()):
             log.info("Importing material %3d / %3d...",
                      i + 1, len(fmdl.materials))
-            mat_imp.import_material(fmat, self.material_map)
+            mat_imp.import_material(fmat, self.texture_map, self.material_map)
 
         # Go through the polygons in this model and create mesh objects representing them.
         for i, fshp in enumerate(fmdl.shapes.values()):
