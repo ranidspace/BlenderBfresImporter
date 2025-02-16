@@ -86,9 +86,9 @@ class ImportBFRES(bpy.types.Operator, ImportHelper):
         max=255,
     )
 
-    mat_name_prefix: StringProperty(
-        name="Material Name Prefix",
-        description="Text to prepend to material names to keep them unique.",
+    name_prefix: StringProperty(
+        name="Material/Texture Name Prefix",
+        description="Text to prepend to material and texture names to keep them unique.",
         maxlen=32,
         default='',
     )
@@ -165,7 +165,7 @@ def import_panel_material(layout, operator):
     header, body = layout.panel("BFRES_import_mat", default_closed=False)
     header.label(text='Materials')
     if (body):
-        body.prop(operator, "mat_name_prefix")
+        body.prop(operator, "name_prefix")
 
 
 def import_panel_misc(layout, operator):

@@ -33,8 +33,11 @@ class TextureImporter:
                 isdata = False
                 float_buffer = True
 
-            image = bpy.data.images.new(name=tex.name, width=tex.width, height=tex.height,
-                                        float_buffer=float_buffer, alpha=alpha, is_data=isdata)
+            image = bpy.data.images.new(
+                name=self.operator.name_prefix+tex.name, width=tex.width,
+                height=tex.height, float_buffer=float_buffer, alpha=alpha,
+                is_data=isdata
+            )
 
             # Issues arise when textures are not multiples of 4, pretty rare.
             if len(tex.pixels) > tex.width * tex.height * 4:

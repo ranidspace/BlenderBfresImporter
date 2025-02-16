@@ -19,9 +19,8 @@ class MaterialImporter:
 
     def import_material(self, fmat, texture_dict, material_dict):
         """Import specified material from fmat."""
-        mat = bpy.data.materials.new(name=fmat.name)
+        mat = bpy.data.materials.new(name=self.operator.name_prefix+fmat.name)
         material_dict[fmat.name] = mat
-        mat.name
         mat.use_nodes = True
         mat_wrap = PrincipledBSDFWrapper(mat, is_readonly=False)
         self.__add_custom_properties(fmat, mat)
@@ -33,6 +32,8 @@ class MaterialImporter:
             if (texName in texture_dict):
                 image = texture_dict[texName]
             else:
+                image = bpy.data.images.get(self.operator.name_prefix+texName) 
+            if (image is None):
                 image = bpy.data.images.get(texName)
             
             if (image is None):
