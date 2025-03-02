@@ -509,8 +509,10 @@ class BC7(TextureFormat):
                 block = BC7.bc7_block(data, pos)
                 pos += 16
 
-                for ty in range(4):
-                    for tx in range(4):
+                th = min(height - (y * 4), 4)
+                tw = min(width - (x * 4), 4)
+                for ty in range(th):
+                    for tx in range(tw):
                         ooffs = (x * 4 + tx + (y * 4 + ty) * width) * 4
                         color = block[(ty * 4) + tx]
 
@@ -547,7 +549,7 @@ class BC7(TextureFormat):
             rotation = getbits(data, pos, start, mode.rotation_bits)
             idx_sel = getbits(data, pos, start, mode.idx_sel_bits)
 
-            c = [bytearray(4) for x in range(6)]
+            c = [bytearray(4) for _ in range(6)]
 
             # R, G, B, A maps to 0, 1, 2, 3
             for col in range(3):
@@ -623,7 +625,7 @@ class BC7(TextureFormat):
                 i0 = getbits(data, pos, cibit, ib)
 
                 # Read Alpha
-                if (mode.alpha_bits and mode.idx_bpe2):
+                if (mode.idx_bpe2):
                     ib2 = mode.idx_bpe2
                     if (ib2 and i == 0):
                         ib2 -= 1
