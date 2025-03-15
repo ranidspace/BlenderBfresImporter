@@ -1,7 +1,8 @@
-from bpy_extras.node_shader_utils import PrincipledBSDFWrapper
-import bpy
 import logging
+
+import bpy
 import mathutils
+from bpy_extras.node_shader_utils import PrincipledBSDFWrapper
 
 from .bfrespy.common import ResString
 
@@ -60,7 +61,7 @@ class MaterialImporter:
                 continue
 
             # Mapping
-            if (mat.get('MP_tex_mtx0_mode')):
+            if (mat.get('MP_tex_mtx0_mode') and fmat.shaderparams["tex_mtx0"].data):
                 if (mappingnode is None):
                     loc = mat['MP_tex_mtx0_translation']
                     tex_helper.translation = mathutils.Vector((loc[0], loc[1], 0))
@@ -112,10 +113,10 @@ class MaterialImporter:
         for name, param in fmat.shaderparams.items():
             pname = 'MP_' + name
             if (param.type.name in ('TEX_SRT', 'TEX_SRT_EX')):
-                mat[pname + "_mode"] = param.data_value.mode.name
-                mat[pname + "_scaling"] = param.data_value.scaling
-                mat[pname + "_rotation"] = param.data_value.rotation
-                mat[pname + '_translation'] = param.data_value.translation
+                mat[pname + "_mode"] = param.data.mode.name
+                mat[pname + "_scaling"] = param.data.scaling
+                mat[pname + "_rotation"] = param.data.rotation
+                mat[pname + '_translation'] = param.data.translation
 
                 propman = mat.id_properties_ui(pname + "_scaling")
                 propman.update(subtype='XYZ')
@@ -124,7 +125,7 @@ class MaterialImporter:
                 propman = mat.id_properties_ui(pname + "_translation")
                 propman.update(subtype='XYZ')
             else:
-                mat[pname] = param.data_value
+                mat[pname] = param.data
                 if (param.type.name == "FLOAT4"):
                     propman = mat.id_properties_ui(pname)
                     propman.update(subtype="COLOR_GAMMA", min=0, max=1, step=0.01)
