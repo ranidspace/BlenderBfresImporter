@@ -7,9 +7,6 @@ in which case it just prints useful information about the BFRES.
 """
 
 
-if ("bpy" in locals()):
-    reload_package(locals())
-
 import bpy
 from bpy.props import (
     StringProperty,
@@ -131,6 +128,7 @@ class ImportBFRES(bpy.types.Operator, ImportHelper):
     def unit_import(self, path, context):
         import os
         from .importing import Importer
+
         if (self.import_tex_file):
             texpath, ext = os.path.splitext(self.filepath)
             texpath = texpath + '.Tex' + ext
