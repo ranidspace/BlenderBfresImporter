@@ -7,7 +7,7 @@ def decompress(compressed: io.BufferedReader):
     # Not using BinaryReader and BinaryRandom here to combat the horrible performance a bit.
     logging.debug("Decompressing Yaz0 file...")
     # Read the header.
-    if (compressed.read(4).decode("ascii") != "Yaz0"):
+    if (compressed.read(4) != b"Yaz0"):
         raise AssertionError("Invalid Yaz0 header.")
     decompressed_size = struct.unpack(">I", compressed.read(4))[0]
     compressed.seek(8, io.SEEK_CUR)  # Padding

@@ -10,7 +10,72 @@ from .bone_anim_importer import BoneAnimationImporter
 from .exceptions import UnsupportedFileTypeError, MalformedFileError
 
 log = logging.getLogger(__name__)
+FILE_BUFFER_SIZE = 1024 * 1024
 
+def open_bfres(filename, access="rb"):
+    """Opens a bfres file for reading or writing,
+    based on the way blender opens blend files.
+    """
+
+    def get_fres_from_sarc(raw):
+        """Attempt to return a FRES file from a SARC archive."""
+        raw.seek(6, io.SEEK_CUR)
+        bom = raw.read(2)
+        if (bom == 0xFEFF):
+            endianness = '>'
+        else:
+            endianness = '<'
+        raw.seek(4, io.SEEK_CUR)
+        offs = struct.unpack(endianness + 'I', raw.read(4))[0]
+        raw.seek(10, io.SEEK_CUR)
+        num_nodes = struct.unpack(endianness + 'H', raw.read(2))[0]
+        raw.seek(4, io.SEEK_CUR)
+        files = []
+        for i in range(num_nodes):
+            raw.seek(8, io.SEEK_CUR)
+            start_offs = struct.unpack(endianness + 'I', raw.read(4))[0]
+            end_offs = struct.unpack(endianness + 'I', raw.read(4))[0]
+            files.append(((start_offs, end_offs)))
+        for fileoff in files:
+            raw.seek(fileoff[0] + offs, io.SEEK_SET)
+            if (raw.read(4) == b'FRES'):
+                raw.seek(-4, io.SEEK_CUR)
+                return io.BytesIO(raw.read(fileoff[1] - offs))
+        raise MalformedFileError("Embedded SARC file does not contain FRES")
+
+
+
+    fh = open(filename, access)
+    magic = fh.read(4)
+    fh.seek(0, os.SEEK_SET)
+
+    if magic == "FRES":
+        log.debug("Uncompressed BFRES file")
+        return fh
+    elif magic == b'\x28\xb5\x2f\xfd':
+        log.debug("ZSTD Compressed BFRES file")
+        fh.close()
+        dctx = zstandard.ZstdDecompressor()
+        with zstandard.open(filename, "rb") as fs:
+            data = fs.read()
+            if data[:4] == b"FRES":
+                raw = io.BytesIO(data)
+                return raw
+    elif magic == b"Yaz0":
+        log.debug("Yaz0 Compressed BFRES file")
+        decompressed = yaz0.decompress(fh)
+        fh.close()
+        magic = decompressed.read(4)
+        decompressed.seek(0, os.SEEK_SET)
+        if magic == b"SARC":
+            return get_fres_from_sarc(decompressed)
+        else:
+            return fh
+    elif magic == b"SARC":
+        log.debug("SARC archive")
+        return get_fres_from_sarc(fh)
+    else:
+        raise UnsupportedFileTypeError(magic)
 
 class Importer:
     def __init__(self, operator, context, filepath):
@@ -26,38 +91,12 @@ class Importer:
         # Create work directories for temporary files.
 
     def run(self):
-        with open(self.filepath, "rb") as f:
-            return self._load_stream(f)
+        return self._import_bfres(self.filepath)
 
-    def _load_stream(self, raw) -> set:
-        """Checks to see if the stream is decompressed, and then checks if it's an archive"""
-        # Ensure to have a stream with decompressed data.
-        magic = raw.read(4)
-        raw.seek(0, io.SEEK_SET)
-        match magic:
-            # Uncompressed
-            case b'FRES':
-                return self._import_bfres(raw)
-            case b'BNTX':
-                return self._import_bntx(raw)
-            # Archive
-            case b'SARC':
-                r = self._get_from_sarc(raw)
-                return self._load_stream(r)
-            # Compressed
-            case b'\x28\xB5\x2F\xFD':  # zstd
-                dctx = zstandard.ZstdDecompressor()
-                r = dctx.decompress(raw.read())
-                return self._load_stream(io.BytesIO(r))
-            case b'Yaz0':
-                r = yaz0.decompress(raw)
-                return self._load_stream(r)
-            case _:
-                raise UnsupportedFileTypeError(magic)
-
-    def _import_bfres(self, stream):
+    def _import_bfres(self, filepath: str):
         """Import a BFRES file, and return 'FINISHED' if it succeeds"""
-        bfres = bfrespy.ResFile(stream)
+        with open_bfres(filepath) as fh:
+            bfres = bfrespy.ResFile(fh)
         self.bfres = bfres
         # Read and import any external files
         for node in bfres.external_files:
@@ -100,42 +139,11 @@ class Importer:
             obj = bpy.data.texts.new(name=name)
             obj.write(file.data.decode('utf-8'))
         else:
-            if (file.data):
-                try:
-                    self._load_stream(io.BytesIO(file.data))
-                except UnsupportedFileTypeError as ex:
-                    log.debug("Embedded file '%s' is of unsupported type '%s'",
-                              name, ex.magic)
+            if (file.data and file.data[:4] == b"BNTX"):
+                self._import_bntx(io.BytesIO(file.data))
             else:
-                log.debug("Embedded file '%s' is empty",
+                log.debug("Unsupported file '%s'",
                           name)
-
-    @staticmethod
-    def _get_from_sarc(raw: io.BytesIO | io.BufferedReader):
-        """Attempt to return a FRES file from a SARC archive."""
-        raw.seek(6, io.SEEK_CUR)
-        bom = raw.read(2)
-        if (bom == 0xFEFF):
-            endianness = '>'
-        else:
-            endianness = '<'
-        raw.seek(4, io.SEEK_CUR)
-        offs = struct.unpack(endianness + 'I', raw.read(4))[0]
-        raw.seek(10, io.SEEK_CUR)
-        num_nodes = struct.unpack(endianness + 'H', raw.read(2))[0]
-        raw.seek(4, io.SEEK_CUR)
-        files = []
-        for i in range(num_nodes):
-            raw.seek(8, io.SEEK_CUR)
-            start_offs = struct.unpack(endianness + 'I', raw.read(4))[0]
-            end_offs = struct.unpack(endianness + 'I', raw.read(4))[0]
-            files.append(((start_offs, end_offs)))
-        for fileoff in files:
-            raw.seek(fileoff[0] + offs, io.SEEK_SET)
-            if (raw.read(4) == b'FRES'):
-                raw.seek(-4, io.SEEK_CUR)
-                return io.BytesIO(raw.read(fileoff[1] - offs))
-        raise MalformedFileError("Embedded SARC file does not contain FRES")
 
     @staticmethod
     def _add_object_to_collecton(object, collection_name):
