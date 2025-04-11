@@ -1,17 +1,13 @@
-import bpy
-import bpy_extras
-import bmesh
-import math
-import mathutils
-import struct
-import numpy as np
-from .skeleton_importer import SkeletonImporter
-from .mesh_importer import MeshImporter
-from .attribute import AttributeFormat
-from .material_importer import MaterialImporter
-from .exceptions import MalformedFileError
-
 import logging
+import math
+import struct
+
+from .attribute import AttributeFormat
+from .exceptions import MalformedFileError
+from .material_importer import MaterialImporter
+from .mesh_importer import MeshImporter
+from .skeleton_importer import SkeletonImporter
+
 log = logging.getLogger(__name__)
 
 
@@ -30,8 +26,7 @@ class ModelImporter:
         mat_imp = MaterialImporter(self, fmdl)
         self.material_map = {}
         for i, fmat in enumerate(fmdl.materials.values()):
-            log.info("Importing material %3d / %3d...",
-                     i + 1, len(fmdl.materials))
+            log.info("Importing material %3d / %3d...", i + 1, len(fmdl.materials))
             mat_imp.import_material(fmat, self.texture_map, self.material_map)
 
         # Go through the polygons in this model and create mesh objects representing them.
@@ -60,29 +55,32 @@ class ModelImporter:
             buffer = fvtx.buffers[attribute.buffer_idx]
             fmt = AttributeFormat(attribute.format_.value)
             for i, offset in enumerate(range(0, len(buffer.data[0]), buffer.stride)):
-
                 try:
                     data = struct.unpack_from(fmt.read, buffer.data[0], offset)
                 except struct.error:
-                    log.error("Submesh %d reading out of bounds for attribute '%s' (offs=0x%X len=0x%X fmt=%s)",
-                              i, vtx_member, offset, len(buffer.data), fmt
-                              )
+                    log.error(
+                        "Submesh %d reading out of bounds for attribute '%s' (offs=0x%X len=0x%X fmt=%s)",
+                        i,
+                        vtx_member,
+                        offset,
+                        len(buffer.data),
+                        fmt,
+                    )
                     raise MalformedFileError(
                         "Submesh {idx} reading out of bounds for attribute '{name}'".format(idx=i, name=vtx_member)
                     )
 
-                if (fmt.func):
+                if fmt.func:
                     data = fmt.func(data)
 
                 # Check if normalized
-                elif (fmt.AttribType.INTEGER not in fmt.flags
-                      and fmt.AttribType.SCALED not in fmt.flags):
+                elif fmt.AttribType.INTEGER not in fmt.flags and fmt.AttribType.SCALED not in fmt.flags:
                     d = []
                     # SNORM
-                    if (fmt.AttribType.SIGNED in fmt.flags):
+                    if fmt.AttribType.SIGNED in fmt.flags:
                         for num in data:
                             # python should make this a float regardless
-                            if (num == fmt.min):
+                            if num == fmt.min:
                                 d.append(-1)
                             else:
                                 d.append(num / fmt.max)
@@ -94,12 +92,12 @@ class ModelImporter:
                     data = tuple(d)
 
                 d = data
-                if (type(d) not in (list, tuple)):
-                    d = (d)
+                if type(d) not in (list, tuple):
+                    d = d
                     # validate
                 for v in d:
-                    if (type(v) is float):
-                        if (math.isinf(v) or math.isnan(v)):
+                    if type(v) is float:
+                        if math.isinf(v) or math.isnan(v):
                             log.warning("value in attribute %s is infinity or NaN", vtx_member)
                             print("value in attribute is infinity or nan")
 

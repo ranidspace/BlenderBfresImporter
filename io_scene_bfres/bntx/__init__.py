@@ -1,17 +1,21 @@
-from .nx import NX
-from ..bfrespy import core
 import io
 import logging
+
+from io_scene_bfres.bfrespy import core
+
+from .nx import NX
 
 log = logging.getLogger(__name__)
 
 
 class BNTX(core.ResData):
     """BNTX texture pack."""
-    __signature = 'BNTX'
+
+    __signature = "BNTX"
 
     def __init__(self, stream: io.BytesIO):
-        from ..bfrespy.switch.switchcore import ResFileSwitchLoader
+        from io_scene_bfres.bfrespy.switch.switchcore import ResFileSwitchLoader
+
         with ResFileSwitchLoader(self, stream) as loader:
             self.load(loader)
 

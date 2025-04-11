@@ -1,13 +1,13 @@
-from blf import load
-import bpy
-import bmesh
-import numpy as np
-import mathutils
-import struct
 import logging
+import struct
+
+import bmesh
+import bpy
+import mathutils
+import numpy as np
+
 from .bfrespy.gx2 import GX2PrimitiveType
-from .material_importer import MaterialImporter
-from .exceptions import UnsupportedFormatError, MalformedFileError
+from .exceptions import MalformedFileError, UnsupportedFormatError
 
 log = logging.getLogger(__name__)
 
@@ -25,9 +25,9 @@ class MeshImporter:
 
         self.mesh_ob = self.__create_mesh()
 
-        if (self.parent.operator.custom_normals):
+        if self.parent.operator.custom_normals:
             self.__add_split_normals()
-        if (self.lod_vtxs[0].get('_c0')):
+        if self.lod_vtxs[0].get("_c0"):
             self.__add_vtx_colors()
         self.__add_uv_map()
         self.__add_vtx_weights()
@@ -39,14 +39,14 @@ class MeshImporter:
         idx_buff = self.lod.index_buffer.data[0]
         match self.lod.index_format.name:
             case "UINT16_LITTLE_ENDIAN":
-                self.indices = np.frombuffer(idx_buff, dtype='<H')
+                self.indices = np.frombuffer(idx_buff, dtype="<H")
             case "UINT32_LITTLE_ENDIAN":
-                self.indices = np.frombuffer(idx_buff, dtype='<I')
+                self.indices = np.frombuffer(idx_buff, dtype="<I")
             case _:
                 raise ValueError("Replace this error")
 
         last_vertex = max(self.indices) + 1
-        self.lod_vtxs = self.fvtx[self.lod.first_vtx:self.lod.first_vtx + last_vertex]
+        self.lod_vtxs = self.fvtx[self.lod.first_vtx : self.lod.first_vtx + last_vertex]
         log.debug("LOD has %d vtxs, %d idxs", len(self.lod_vtxs), len(self.indices))
 
         # Create a bmesh to represent the FSHP polygon.
@@ -69,12 +69,12 @@ class MeshImporter:
         """Go through the vertices (starting at the given offset) and add them to the bmesh."""
         for i, vertex in enumerate(self.lod_vtxs):
             try:
-                if (len(vertex['_p0']) == 4):
-                    x, y, z, w = vertex['_p0']
+                if len(vertex["_p0"]) == 4:
+                    x, y, z, w = vertex["_p0"]
                 else:
-                    x, y, z = vertex['_p0']
+                    x, y, z = vertex["_p0"]
                     w = 1
-                if (w != 1):
+                if w != 1:
                     # Blender doesn't support the W coord, but it's never used anyway.
                     log.warning("FRES: FSHP vertex #%d W coord is %f, should be 1", i, w)
             except IndexError:
@@ -89,7 +89,7 @@ class MeshImporter:
                     x, y, z = P
                     vert = bm.verts.new((x, y, z))
                 case 1:
-                    midx = vertex['_i0'][0]
+                    midx = vertex["_i0"][0]
                     M = self.fmdl.skeleton.bones[self.fmdl.skeleton.mtx_to_bone_list[midx]].matrix
                     P = mathutils.Vector((x, y, z))
                     P = M @ P
@@ -105,8 +105,8 @@ class MeshImporter:
         """Create the faces."""
         fmt = self.lod.primitive_type
         fmt = self.__prim_types[fmt]
-        method = getattr(self, '_create_faces_' + fmt[2], None)
-        if (method is None):
+        method = getattr(self, "_create_faces_" + fmt[2], None)
+        if method is None:
             log.error("Unsupported primitive format: %s", fmt)
             raise UnsupportedFormatError("Unsupported prim format: " + fmt[2])
         try:
@@ -115,21 +115,22 @@ class MeshImporter:
             raise MalformedFileError("LOD submesh faces are out of bounds")
 
     __prim_types = {
-        GX2PrimitiveType.POINTS: (1, 1, 'point_list'),
-        GX2PrimitiveType.LINES: (2, 2, 'line_list'),
-        GX2PrimitiveType.LINE_STRIP: (2, 1, 'line_strip'),
-        GX2PrimitiveType.TRIANGLES: (3, 3, 'triangle_list'),
+        GX2PrimitiveType.POINTS: (1, 1, "point_list"),
+        GX2PrimitiveType.LINES: (2, 2, "line_list"),
+        GX2PrimitiveType.LINE_STRIP: (2, 1, "line_strip"),
+        GX2PrimitiveType.TRIANGLES: (3, 3, "triangle_list"),
     }
 
-    def __create_faces_basic(self, idxs, mesh, step, nVtxs):
+    @staticmethod
+    def __create_faces_basic(idxs, mesh, step, num_vtxs):
         for i in range(0, len(idxs), step):
             try:
-                vs = list(mesh.verts[j] for j in idxs[i:i + nVtxs])
+                vs = [mesh.verts[j] for j in idxs[i : i + num_vtxs]]
                 # log.debug("face %d: %s", i, vs)
                 face = mesh.faces.new(vs)
                 face.smooth = True
             except IndexError:
-                log.error("LOD submesh face %d is out of bounds (max %d)", i, len(idxs))
+                log.exception("LOD submesh face %d is out of bounds (max %d)", i, len(idxs))
                 raise
             except ValueError:
                 pass
@@ -151,7 +152,7 @@ class MeshImporter:
         mdata = self.mesh_ob.data
 
         for v in mdata.vertices:
-            x, y, z = self.lod_vtxs[v.index]['_n0'][0:3]
+            x, y, z = self.lod_vtxs[v.index]["_n0"][0:3]
             match self.fshp.vtx_skin_count:
                 case 0:
                     midx = self.fshp.bone_idx
@@ -161,7 +162,7 @@ class MeshImporter:
                     P = M @ P
 
                 case 1:
-                    midx = self.lod_vtxs[v.index]['_i0'][0]
+                    midx = self.lod_vtxs[v.index]["_i0"][0]
                     M = self.fmdl.skeleton.bones[self.fmdl.skeleton.mtx_to_bone_list[midx]].matrix
                     M = M.decompose()[1]
                     P = mathutils.Vector((x, y, z))
@@ -174,22 +175,22 @@ class MeshImporter:
 
     def __add_vtx_colors(self):
         mdata = self.mesh_ob.data
-        vertex_colors = mdata.color_attributes.new(name='_c0', type='FLOAT_COLOR', domain='POINT')
+        vertex_colors = mdata.color_attributes.new(name="_c0", type="FLOAT_COLOR", domain="POINT")
 
         for v in mdata.vertices:
-            col = self.lod_vtxs[v.index]['_c0']
+            col = self.lod_vtxs[v.index]["_c0"]
             vertex_colors.data[v.index].color_srgb = col
 
     def __add_uv_map(self):
         idx = 0
         while True:
-            attr = '_u%d' % idx
-            if (self.fvtx[0].get(attr, None) is None):
+            attr = f"_u{idx}"
+            if self.fvtx[0].get(attr, None) is None:
                 break
             mdata = self.mesh_ob.data
             uv_layer = mdata.uv_layers.new(name=attr)
-            for i, poly in enumerate(mdata.polygons):
-                for j, loop_idx in enumerate(poly.loop_indices):
+            for poly in mdata.polygons:
+                for loop_idx in poly.loop_indices:
                     loop = mdata.loops[loop_idx]
                     uvloop = uv_layer.data[loop_idx]
                     x, y = self.lod_vtxs[loop.vertex_index][attr][:2]
@@ -207,7 +208,7 @@ class MeshImporter:
 
     def __make_vtx_group(self):
         """Make vertex group for mesh object from attributes."""
-        # XXX move to SkeletonImporter?
+        # XXX: move to SkeletonImporter?
         groups = {}
 
         # i0 = self.attrBuffers.get('_i0')
@@ -216,35 +217,35 @@ class MeshImporter:
         # create a vertex group for each bone
         # each bone affects the vertex group with the same
         # name as that bone, and these weights define how much.
-        if (self.fshp.vtx_skin_count == 0):
+        if self.fshp.vtx_skin_count == 0:
             # no i0 or w0, mesh is parented to the bone it's on
             idx = self.fshp.bone_idx
             grp = self.mesh_ob.vertex_groups.new(name=self.fmdl.skeleton.bones[idx].name)
 
             for i in range(len(self.lod_vtxs)):
-                grp.add([i], 1, 'REPLACE')
+                grp.add([i], 1, "REPLACE")
         else:
             for bone in self.fmdl.skeleton.bones.values():
                 grp = self.mesh_ob.vertex_groups.new(name=bone.name)
                 groups[bone.smooth_mtx_idx] = grp
                 groups[bone.rigid_mtx_idx] = grp
 
-            if (self.fshp.vtx_skin_count == 1):
+            if self.fshp.vtx_skin_count == 1:
                 # i0 specifies the bone rigid matrix group.
                 for i in range(0, len(self.lod_vtxs)):
-                    idx = self.lod_vtxs[i]['_i0'][0]
-                    groups[idx].add([i], 1, 'REPLACE')
+                    idx = self.lod_vtxs[i]["_i0"][0]
+                    groups[idx].add([i], 1, "REPLACE")
             else:
                 # i0 specifies the bone smooth matrix group.
                 # Look for a bone with the same group.
-                for i in range(0, len(self.lod_vtxs)):
+                for i in range(len(self.lod_vtxs)):
                     # how much this bone affects this vertex
-                    wgt = self.lod_vtxs[i]['_w0'][:self.fshp.vtx_skin_count]
-                    idx = self.lod_vtxs[i]['_i0']  # which bone index group
+                    wgt = self.lod_vtxs[i]["_w0"][: self.fshp.vtx_skin_count]
+                    idx = self.lod_vtxs[i]["_i0"]  # which bone index group
                     for j, w in enumerate(wgt):
-                        if (w > 0):
+                        if w > 0:
                             try:
-                                groups[idx[j]].add([i], w / 255.0, 'REPLACE')
+                                groups[idx[j]].add([i], w / 255.0, "REPLACE")
                             except (KeyError, IndexError):
                                 # log.warning("Bone group %d doesn't exist (referenced by weight of vtx %d, value %d)",
                                 #             idx[j], i, w)
@@ -252,7 +253,7 @@ class MeshImporter:
 
     def __add_armature(self):
         """Add armature to mesh."""
-        mod = self.mesh_ob.modifiers.new(name=self.lod_name, type='ARMATURE')
+        mod = self.mesh_ob.modifiers.new(name=self.lod_name, type="ARMATURE")
         mod.object = self.parent.fskl_ob
         mod.use_bone_envelopes = False
         mod.use_vertex_groups = True

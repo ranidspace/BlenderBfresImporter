@@ -1,7 +1,10 @@
-from ..bfrespy import core
-from .brti import BRTI
-import logging
 import io
+import logging
+
+from io_scene_bfres.bfrespy import core
+
+from .brti import BRTI
+
 log = logging.getLogger(__name__)
 
 
@@ -12,7 +15,7 @@ class NX(core.ResData):
         self.textures = []
 
     def load(self, loader: core.ResFileLoader):
-        target_platform = loader.read_raw_string(4, 'ascii')
+        target_platform = loader.read_raw_string(4, "ascii")
         tex_count = loader.read_int32()
         tex_table_array = loader.read_offset()
         tex_data_ptr = loader.read_uint64()

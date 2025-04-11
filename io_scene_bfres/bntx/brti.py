@@ -1,16 +1,20 @@
-from .pixelfmt.formatinfo import formats, bpps, blk_dims
-from .pixelfmt.swizzle import deswizzle, div_round_up, pow2_round_up
-from .pixelfmt import TextureFormat
-from enum import IntEnum
-from ..bfrespy import core
-import logging
 import io
+import logging
+from enum import IntEnum
+
+from io_scene_bfres.bfrespy import core
+
+from .pixelfmt import TextureFormat
+from .pixelfmt.formatinfo import blk_dims, bpps
+from .pixelfmt.swizzle import deswizzle, div_round_up, pow2_round_up
+
 log = logging.getLogger(__name__)
 
 
 class BRTI(core.ResData):
     """A BRTI in a BNTX."""
-    __signature = 'BRTI'
+
+    __signature = "BRTI"
 
     def __init__(self):
         self.name: str
@@ -99,15 +103,20 @@ class BRTI(core.ResData):
         blk_height_shift = 0
         mip_offset = self.mip_offsets[0]
 
-        size = div_round_up(self.width, self.blk_width) * \
-            div_round_up(self.height, self.blk_height) * self.bpp
+        size = div_round_up(self.width, self.blk_width) * div_round_up(self.height, self.blk_height) * self.bpp
 
-        if (pow2_round_up(div_round_up(self.height, self.blk_height)) < lines_per_blk_height):
+        if pow2_round_up(div_round_up(self.height, self.blk_height)) < lines_per_blk_height:
             blk_height_shift += 1
 
         result = deswizzle(
-            self.width, self.height, self.blk_width, self.blk_height, self.bpp, self.tile_mode,
-            max(0, self.blk_height_log2 - blk_height_shift), self.data,
+            self.width,
+            self.height,
+            self.blk_width,
+            self.blk_height,
+            self.bpp,
+            self.tile_mode,
+            max(0, self.blk_height_log2 - blk_height_shift),
+            self.data,
         )
 
         self.mip_data = result[:size]

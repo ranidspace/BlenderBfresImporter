@@ -6,7 +6,7 @@ class UnsupportedFileTypeError(Exception):
         self.magic = magic
 
     def __str__(self):
-        return "UnsupportedFileTypeError(%s)" % str(self.magic)
+        return f"UnsupportedFileTypeError({self.magic})"
 
 
 class UnsupportedFormatError(Exception):
