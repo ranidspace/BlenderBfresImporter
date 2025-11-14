@@ -7,18 +7,17 @@ import mathutils
 class SkeletonImporter:
     def __init__(self, parent):
         self.operator = parent.operator
-        self.context = parent.context
 
     def _convert_fskl(self, fmdl, fskl, collection):
         name = fmdl.name
-        self.context.scene.cursor.location = (0.0, 0.0, 0.0)
+        bpy.context.scene.cursor.location = (0.0, 0.0, 0.0)
 
         amt = bpy.data.armatures.new(name=name + ".Armature")
         amt.relation_line_position = "HEAD"
         arm_obj = bpy.data.objects.new(name=name, object_data=amt)
 
         collection.objects.link(arm_obj)
-        self.context.view_layer.objects.active = arm_obj
+        bpy.context.view_layer.objects.active = arm_obj
 
         bpy.ops.object.mode_set(mode="EDIT", toggle=False)
         bone_objs = {}

@@ -43,10 +43,10 @@ class MeshImporter:
             case "UINT32_LITTLE_ENDIAN":
                 self.indices = np.frombuffer(idx_buff, dtype="<I")
             case _:
-                raise ValueError("Replace this error")
+                raise ValueError("Invalid index buffer value %s", self.lod.index_format.name)
 
         last_vertex = max(self.indices) + 1
-        self.lod_vtxs = self.fvtx[self.lod.first_vtx : self.lod.first_vtx + last_vertex]
+        self.lod_vtxs = self.fvtx[self.lod.first_vtx:self.lod.first_vtx + last_vertex]
         log.debug("LOD has %d vtxs, %d idxs", len(self.lod_vtxs), len(self.indices))
 
         # Create a bmesh to represent the FSHP polygon.
@@ -67,36 +67,25 @@ class MeshImporter:
 
     def __add_verts_to_mesh(self, bm):
         """Go through the vertices (starting at the given offset) and add them to the bmesh."""
-        for i, vertex in enumerate(self.lod_vtxs):
+        for _, fshp_vtx in enumerate(self.lod_vtxs):
             try:
-                if len(vertex["_p0"]) == 4:
-                    x, y, z, w = vertex["_p0"]
-                else:
-                    x, y, z = vertex["_p0"]
-                    w = 1
-                if w != 1:
-                    # Blender doesn't support the W coord, but it's never used anyway.
-                    log.warning("FRES: FSHP vertex #%d W coord is %f, should be 1", i, w)
+                vtx_pos = mathutils.Vector(fshp_vtx["_p0"][0:3])
             except IndexError:
-                # logger
+                log.exception("Index out of bounds")
                 raise
+
             match self.fshp.vtx_skin_count:
                 case 0:
                     midx = self.fshp.bone_idx
-                    M = self.fmdl.skeleton.bones[midx].matrix
-                    P = mathutils.Vector((x, y, z))
-                    P = M @ P
-                    x, y, z = P
-                    vert = bm.verts.new((x, y, z))
+                    matrix = self.fmdl.skeleton.bones[midx].matrix
+                    vtx_pos = matrix @ vtx_pos
                 case 1:
-                    midx = vertex["_i0"][0]
-                    M = self.fmdl.skeleton.bones[self.fmdl.skeleton.mtx_to_bone_list[midx]].matrix
-                    P = mathutils.Vector((x, y, z))
-                    P = M @ P
-                    x, y, z = P
-                    vert = bm.verts.new((x, y, z))
+                    midx = fshp_vtx["_i0"][0]
+                    matrix = self.fmdl.skeleton.bones[self.fmdl.skeleton.mtx_to_bone_list[midx]].matrix
+                    vtx_pos = matrix @ vtx_pos
                 case _:
-                    vert = bm.verts.new((x, -z, y))
+                    vtx_pos = mathutils.Vector((vtx_pos.x, -vtx_pos.z, vtx_pos.y))
+            bm.verts.new(vtx_pos)
 
         bm.verts.ensure_lookup_table()
         bm.verts.index_update()
@@ -111,8 +100,8 @@ class MeshImporter:
             raise UnsupportedFormatError("Unsupported prim format: " + fmt[2])
         try:
             return method(self.indices, bm)
-        except (struct.error, IndexError):
-            raise MalformedFileError("LOD submesh faces are out of bounds")
+        except (struct.error, IndexError) as e:
+            raise MalformedFileError("LOD submesh faces are out of bounds") from e
 
     __prim_types = {
         GX2PrimitiveType.POINTS: (1, 1, "point_list"),
@@ -135,43 +124,47 @@ class MeshImporter:
             except ValueError:
                 pass
 
-    def _create_faces_point_list(self, idxs, mesh):
-        return self.__create_faces_basic(idxs, mesh, 1, 1)
+    @staticmethod
+    def _create_faces_point_list(idxs, mesh):
+        return MeshImporter.__create_faces_basic(idxs, mesh, 1, 1)
 
-    def _create_faces_line_list(self, idxs, mesh):
-        return self.__create_faces_basic(idxs, mesh, 2, 2)
+    @staticmethod
+    def _create_faces_line_list(idxs, mesh):
+        return MeshImporter.__create_faces_basic(idxs, mesh, 2, 2)
 
-    def _create_faces_line_strip(self, idxs, mesh):
-        return self.__create_faces_basic(idxs, mesh, 1, 2)
+    @staticmethod
+    def _create_faces_line_strip(idxs, mesh):
+        return MeshImporter.__create_faces_basic(idxs, mesh, 1, 2)
 
-    def _create_faces_triangle_list(self, idxs, mesh):
-        return self.__create_faces_basic(idxs, mesh, 3, 3)
+    @staticmethod
+    def _create_faces_triangle_list(idxs, mesh):
+        return MeshImporter.__create_faces_basic(idxs, mesh, 3, 3)
 
     def __add_split_normals(self):
         normals = []
-        mdata = self.mesh_ob.data
 
-        for v in mdata.vertices:
-            x, y, z = self.lod_vtxs[v.index]["_n0"][0:3]
+        for v in self.mesh_ob.data.vertices:
+            normal = mathutils.Vector(self.lod_vtxs[v.index]["_n0"][0:3])
             match self.fshp.vtx_skin_count:
                 case 0:
-                    midx = self.fshp.bone_idx
-                    M = self.fmdl.skeleton.bones[midx].matrix
-                    M = M.decompose()[1]
-                    P = mathutils.Vector((x, y, z))
-                    P = M @ P
+                    matrix_id = self.fshp.bone_idx
+                    matrix = self.fmdl.skeleton.bones[matrix_id].matrix
+                    normal = self.__rotate_normal(matrix, normal)
 
                 case 1:
-                    midx = self.lod_vtxs[v.index]["_i0"][0]
-                    M = self.fmdl.skeleton.bones[self.fmdl.skeleton.mtx_to_bone_list[midx]].matrix
-                    M = M.decompose()[1]
-                    P = mathutils.Vector((x, y, z))
-                    P = M @ P
+                    matrix_id = self.lod_vtxs[v.index]["_i0"][0]
+                    matrix = self.fmdl.skeleton.bones[self.fmdl.skeleton.mtx_to_bone_list[matrix_id]].matrix
+                    normal = self.__rotate_normal(matrix, normal)
                 case _:
-                    P = mathutils.Vector((x, -z, y))
-            normals.append(P)
+                    normal = mathutils.Vector((normal.x, -normal.z, normal.y))
+            normals.append(normal)
 
-        mdata.normals_split_custom_set_from_vertices(normals)
+        self.mesh_ob.data.normals_split_custom_set_from_vertices(normals)
+
+    @staticmethod
+    def __rotate_normal(matrix, normal) -> mathutils.Vector:
+        rotation = matrix.decompose()[1]
+        return rotation @ normal
 
     def __add_vtx_colors(self):
         mdata = self.mesh_ob.data

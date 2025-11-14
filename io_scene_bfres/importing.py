@@ -15,9 +15,8 @@ log = logging.getLogger(__name__)
 
 
 class Importer:
-    def __init__(self, operator, context, filepath):
+    def __init__(self, operator, filepath):
         self.operator = operator
-        self.context = context
         self.bfres: bfrespy.ResFile
 
         # Extract path information.

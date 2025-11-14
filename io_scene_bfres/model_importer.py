@@ -1,6 +1,7 @@
 import logging
-import math
 import struct
+
+import numpy as np
 
 from .attribute import AttributeFormat
 from .exceptions import MalformedFileError
@@ -14,7 +15,6 @@ log = logging.getLogger(__name__)
 class ModelImporter:
     def __init__(self, parent):
         self.operator = parent.operator
-        self.context = parent.context
         self.texture_map = parent.texture_map
         self.material_map: dict
 
@@ -49,57 +49,43 @@ class ModelImporter:
 
     @staticmethod
     def __get_vertices(fvtx) -> list:
-        vertices = [{} for _ in range(fvtx.vtx_count)]
+        vertices = {}
         for attribute in fvtx.attributes.values():
-            vtx_member = attribute.name
+            vtx_atrribute = attribute.name
             buffer = fvtx.buffers[attribute.buffer_idx]
             fmt = AttributeFormat(attribute.format_.value)
-            for i, offset in enumerate(range(0, len(buffer.data[0]), buffer.stride)):
+
+            data = [None] * fvtx.vtx_count
+            for i in range(fvtx.vtx_count):
                 try:
-                    data = struct.unpack_from(fmt.read, buffer.data[0], offset)
-                except struct.error:
-                    log.error(
+                    offset = i * buffer.stride
+                    data[i] = struct.unpack_from(fmt.read, buffer.data[0], offset)
+                except struct.error as e:
+                    log.exception(
                         "Submesh %d reading out of bounds for attribute '%s' (offs=0x%X len=0x%X fmt=%s)",
                         i,
-                        vtx_member,
+                        vtx_atrribute,
                         offset,
                         len(buffer.data),
                         fmt,
                     )
                     raise MalformedFileError(
-                        "Submesh {idx} reading out of bounds for attribute '{name}'".format(idx=i, name=vtx_member)
-                    )
+                        "Submesh {idx} reading out of bounds for attribute '{name}'".format(idx=i, name=vtx_atrribute)
+                    ) from e
 
-                if fmt.func:
-                    data = fmt.func(data)
+            data = np.array(data)
 
-                # Check if normalized
-                elif fmt.AttribType.INTEGER not in fmt.flags and fmt.AttribType.SCALED not in fmt.flags:
-                    d = []
-                    # SNORM
-                    if fmt.AttribType.SIGNED in fmt.flags:
-                        for num in data:
-                            # python should make this a float regardless
-                            if num == fmt.min:
-                                d.append(-1)
-                            else:
-                                d.append(num / fmt.max)
-                    # UNORM
-                    else:
-                        for num in data:
-                            # python should make this a float regardless
-                            d.append(num / fmt.max)
-                    data = tuple(d)
+            if fmt.func:
+                data = fmt.func(data)
 
-                d = data
-                if type(d) not in (list, tuple):
-                    d = d
-                    # validate
-                for v in d:
-                    if type(v) is float:
-                        if math.isinf(v) or math.isnan(v):
-                            log.warning("value in attribute %s is infinity or NaN", vtx_member)
-                            print("value in attribute is infinity or nan")
+            # Check if normalized
+            elif fmt.AttribType.INTEGER not in fmt.flags and fmt.AttribType.SCALED not in fmt.flags:
+                # SNORM
+                if fmt.AttribType.SIGNED in fmt.flags:
+                    np.where(data == fmt.min, -1, np.divide(data, fmt.max))
+                # UNORM
+                else:
+                    data = np.divide(data, fmt.max)
 
-                vertices[i][vtx_member] = data
-        return vertices
+            vertices[vtx_atrribute] = data
+        return [dict(zip(vertices, t, strict=True)) for t in zip(*vertices.values(), strict=True)]

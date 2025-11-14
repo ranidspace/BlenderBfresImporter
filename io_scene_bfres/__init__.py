@@ -6,29 +6,27 @@ This script can also run from the command line without Blender,
 in which case it just prints useful information about the BFRES.
 """
 
-
-if ("bpy" in locals()):
-    reload_package(locals())
+import logging
 
 import bpy
 from bpy.props import (
-    StringProperty,
     BoolProperty,
-    IntProperty,
-    EnumProperty,
     CollectionProperty,
+    EnumProperty,
+    IntProperty,
+    StringProperty,
 )
-from bpy_extras.io_utils import ImportHelper, ExportHelper
+from bpy_extras.io_utils import ImportHelper
 
-import logging
 log = logging.getLogger(__name__)
 
 
 class ImportBFRES(bpy.types.Operator, ImportHelper):
     """Load a BFRES model file"""
+
     bl_idname = "import_scene.bfres"
     bl_label = "Import NX BFRES"
-    bl_options = {'UNDO'}
+    bl_options = {"UNDO"}
 
     filename_ext = ".bfres"
 
@@ -39,7 +37,7 @@ class ImportBFRES(bpy.types.Operator, ImportHelper):
 
     filter_glob: StringProperty(
         default="*.sbfres;*.bfres;*.fres;*.szs;*.zs",
-        options={'HIDDEN'},
+        options={"HIDDEN"},
     )
 
     files: CollectionProperty(
@@ -48,8 +46,7 @@ class ImportBFRES(bpy.types.Operator, ImportHelper):
     )
 
     ui_tab: EnumProperty(
-        items=(('MAIN', "Main", "Main basic settings"),
-               ),
+        items=(("MAIN", "Main", "Main basic settings"),),
         name="ui_tab",
         description="Import options categories",
     )
@@ -90,7 +87,7 @@ class ImportBFRES(bpy.types.Operator, ImportHelper):
         name="Material/Texture Name Prefix",
         description="Text to prepend to material and texture names to keep them unique.",
         maxlen=32,
-        default='',
+        default="",
     )
 
     add_fake_user: BoolProperty(
@@ -117,37 +114,40 @@ class ImportBFRES(bpy.types.Operator, ImportHelper):
 
     def execute(self, context):
         import os
-        ret = {'CANCELLED'}
 
-        if (self.files):
+        ret = {"CANCELLED"}
+
+        if self.files:
             dirname = os.path.dirname(self.filepath)
             for file in self.files:
                 path = os.path.join(dirname, file.name)
-                if (self.unit_import(path, context) == {'FINISHED'}):
-                    ret = {'FINISHED'}
+                if self.unit_import(path) == {"FINISHED"}:
+                    ret = {"FINISHED"}
             return ret
-        return self.unit_import(self.filepath, context)
+        return self.unit_import(self.filepath)
 
-    def unit_import(self, path, context):
+    def unit_import(self, path):
         import os
+
         from .importing import Importer
-        if (self.import_tex_file):
+
+        if self.import_tex_file:
             texpath, ext = os.path.splitext(self.filepath)
-            texpath = texpath + '.Tex' + ext
-            if (os.path.exists(texpath)):
+            texpath = texpath + ".Tex" + ext
+            if os.path.exists(texpath):
                 log.info("Importing linked file: %s", texpath)
-                importer = Importer(self, context, path)
+                importer = Importer(self, path)
                 importer.run()
 
         log.info("importing: %s", path)
-        importer = Importer(self, context, path)
+        importer = Importer(self, path)
         return importer.run()
 
 
 def import_panel_textures(layout, operator):
     header, body = layout.panel("BFRES_import_texture", default_closed=False)
-    header.label(text='Textures')
-    if (body):
+    header.label(text="Textures")
+    if body:
         body.prop(operator, "import_tex_file")
         body.prop(operator, "dump_textures")
         body.prop(operator, "component_selector")
@@ -155,31 +155,31 @@ def import_panel_textures(layout, operator):
 
 def import_panel_mesh(layout, operator):
     header, body = layout.panel("BFRES_import_mesh", default_closed=False)
-    header.label(text='Meshes')
-    if (body):
+    header.label(text="Meshes")
+    if body:
         body.prop(operator, "custom_normals")
         body.prop(operator, "lod_index")
 
 
 def import_panel_material(layout, operator):
     header, body = layout.panel("BFRES_import_mat", default_closed=False)
-    header.label(text='Materials')
-    if (body):
+    header.label(text="Materials")
+    if body:
         body.prop(operator, "name_prefix")
 
 
 def import_panel_misc(layout, operator):
     header, body = layout.panel("BFRES_import_misc", default_closed=False)
-    header.label(text='Misc')
-    if (body):
+    header.label(text="Misc")
+    if body:
         body.prop(operator, "add_fake_user")
         body.prop(operator, "import_anims")
 
 
 def menu_func_import(self, context):
-    self.layout.operator_context = 'INVOKE_DEFAULT'
-    self.layout.operator(ImportBFRES.bl_idname,
-                         text="Nintendo Switch BFRES (.bfres/.szs/.zs)")
+    self.layout.operator_context = "INVOKE_DEFAULT"
+    self.layout.operator(ImportBFRES.bl_idname, text="Nintendo Switch BFRES (.bfres/.szs/.zs)")
+
 
 # def menu_func_export(self, context):
 #    self.layout.operator(ExportBFRES.bl_idname, text="Nintendo Switch BFRES (.bfres)")
@@ -209,6 +209,6 @@ def unregister():
         bpy.utils.unregister_class(cls)
 
 
-if (__name__ == '__main__'):
+if __name__ == "__main__":
     # main() # see above function
     register()

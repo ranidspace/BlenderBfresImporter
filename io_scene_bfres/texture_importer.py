@@ -12,7 +12,6 @@ class TextureImporter:
     def __init__(self, parent):
         self.parent = parent
         self.operator = parent.operator
-        self.context = parent.context
 
     def import_textures(self, bntx):
         """Import textures from BNTX."""

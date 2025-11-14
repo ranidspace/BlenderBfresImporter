@@ -4,3 +4,8 @@ requires-python = ">= 3.11.11"
 [tool.ruff]
 line-length = 120
 
+[tool.ruff.lint]
+
+ignore = [
+    "E721", "E722", "E402",
+]

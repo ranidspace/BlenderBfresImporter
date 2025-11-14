@@ -15,7 +15,6 @@ class MaterialImporter:
     def __init__(self, parent, fmdl):
         self.fmdl = fmdl
         self.operator = parent.operator
-        self.context = parent.context
         self.texture_map: dict
 
     def import_material(self, fmat, texture_dict, material_dict):

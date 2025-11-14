@@ -1,6 +1,8 @@
 from collections.abc import Mapping
 from enum import IntFlag
 
+import numpy as np
+
 
 class AttributeFormat:
     def __init__(self, value: int):
@@ -20,34 +22,32 @@ class AttributeFormat:
             self.max = self.__type_ranges[self.read[-1]][1]
 
     @staticmethod
-    def unpack10bit(val):
-        if type(val) in {list, tuple}:
-            val = val[0]  # grumble grumble struct is butts
-        res = []
+    def unpack10bit(array):
+        output = np.zeros((len(array), 4), np.float32)
         for i in range(3):
-            s = (val >> (i * 10)) & 0x200
-            v = (val >> (i * 10)) & 0x1FF
-            if s:
-                v -= 512
-            v = max(v, -511)
-            res.append(v / 511)
-        res.append(val >> (30))
-        return tuple(res)
+            sign = (np.right_shift(array, (i * 10))) & 0x200
+            v = (np.right_shift(array, (i * 10))) & 0x1FF
+
+            v = np.where(sign, v - 512, v)
+            output[:, i] = v.flatten()
+
+        output = np.maximum(output, -511) / 511
+        output[:, 3] = np.right_shift(array, 30).flatten()
+        return output
 
     @staticmethod
-    def unpack_arm_half_float(val):
+    def unpack_arm_half_float(array):
         """Unpack 16-bit half-precision float.
 
         Uses ARM alternate format which does not encode Inf/NaN.
         """
-        if type(val) in {list, tuple}:
-            return tuple(map(AttributeFormat.unpack_arm_half_float, val))
-        frac = (val & 0x3FF) / 0x3FF
-        exp = (val >> 10) & 0x1F
-        sign = -1 if (val & 0x8000) else 1
-        if exp == 0:
-            return sign * (2**-14) * frac
-        return sign * (2 ** (exp - 15)) * (1 + frac)
+        frac = np.bitwise_and(array, 0x3FF) / 0x3FF
+        exp = np.right_shift(array, 10) & 0x1F
+        sign = np.where(np.bitwise_and(array, 0x8000), -1, 1)
+        return np.where(
+            exp == 0,
+            sign * (2.0**-14) * frac,
+            sign * (2.0 ** (exp - 15)) * (1 + frac))
 
     class AttribType(IntFlag):
         INTEGER = 0x100
