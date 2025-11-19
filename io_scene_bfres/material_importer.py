@@ -153,3 +153,6 @@ class MaterialImporter:
 
         if mat.get("SO_enable_emission") == "true":
             mat_wrap.emission_strength = mat["MP_emission_intensity"]
+        else:
+            # for blender 3.6
+            mat_wrap.emission_strength = 0.0

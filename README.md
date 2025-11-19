@@ -1,6 +1,6 @@
 # Bfres Importer
 
-This is a Blender(4.0+) addon imports the Nintendo .bfres file format.
+This is a Blender(3.6+) addon imports the Nintendo .bfres file format.
 
 ## Installation
 

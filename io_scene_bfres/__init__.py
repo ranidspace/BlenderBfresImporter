@@ -24,8 +24,8 @@ bl_info = {
     "name": "BFRES Importer",
     "author": "ranidspace",
     "version": (2, 1, 0),
-    "blender": (4, 0, 0),
-    "category": "Object",
+    "blender": (3, 6, 0),
+    "category": "Import-Export",
 }
 
 
