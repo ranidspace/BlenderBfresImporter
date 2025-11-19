@@ -20,6 +20,14 @@ from bpy_extras.io_utils import ImportHelper
 
 log = logging.getLogger(__name__)
 
+bl_info = {
+    "name": "BFRES Importer",
+    "author": "ranidspace",
+    "version": (2, 1, 0),
+    "blender": (4, 0, 0),
+    "category": "Object",
+}
+
 
 class ImportBFRES(bpy.types.Operator, ImportHelper):
     """Load a BFRES model file"""
@@ -60,12 +68,6 @@ class ImportBFRES(bpy.types.Operator, ImportHelper):
     component_selector: BoolProperty(
         name="Use Component Selector",
         description="Uses the component selector for each texture. Turn it on if the colours look off",
-        default=False,
-    )
-
-    dump_textures: BoolProperty(
-        name="Dump Textures",
-        description="Export textures to PNG.",
         default=False,
     )
 
@@ -145,32 +147,47 @@ class ImportBFRES(bpy.types.Operator, ImportHelper):
 
 
 def import_panel_textures(layout, operator):
-    header, body = layout.panel("BFRES_import_texture", default_closed=False)
-    header.label(text="Textures")
+    if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 1:
+        header, body = layout.panel("BFRES_import_texture", default_closed=False)
+        header.label(text="Textures")
+    else:
+        layout.label(text="Textures")
+        body = layout.column(align=False)
     if body:
         body.prop(operator, "import_tex_file")
-        body.prop(operator, "dump_textures")
         body.prop(operator, "component_selector")
 
 
 def import_panel_mesh(layout, operator):
-    header, body = layout.panel("BFRES_import_mesh", default_closed=False)
-    header.label(text="Meshes")
+    if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 1:
+        header, body = layout.panel("BFRES_import_mesh", default_closed=False)
+        header.label(text="Meshes")
+    else:
+        layout.label(text="Meshes")
+        body = layout.column(align=False)
     if body:
         body.prop(operator, "custom_normals")
         body.prop(operator, "lod_index")
 
 
 def import_panel_material(layout, operator):
-    header, body = layout.panel("BFRES_import_mat", default_closed=False)
-    header.label(text="Materials")
+    if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 1:
+        header, body = layout.panel("BFRES_import_mat", default_closed=False)
+        header.label(text="Materials")
+    else:
+        layout.label(text="Materials")
+        body = layout.column(align=False)
     if body:
         body.prop(operator, "name_prefix")
 
 
 def import_panel_misc(layout, operator):
-    header, body = layout.panel("BFRES_import_misc", default_closed=False)
-    header.label(text="Misc")
+    if bpy.app.version[0] >= 4 and bpy.app.version[1] >= 1:
+        header, body = layout.panel("BFRES_import_misc", default_closed=False)
+        header.label(text="Misc")
+    else:
+        layout.label(text="Misc")
+        body = layout.column(align=False)
     if body:
         body.prop(operator, "add_fake_user")
         body.prop(operator, "import_anims")

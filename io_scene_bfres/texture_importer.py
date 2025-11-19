@@ -79,17 +79,6 @@ class TextureImporter:
 
             image.pixels = np.ravel(pixels)
 
-            # save to file
-            if self.operator.dump_textures:
-                path = self.parent.bfres.name if hasattr(self.parent, "bfres") else "bntx"
-                directory = bpy.utils.extension_path_user(__package__, path=path, create=True)
-
-                ext = "exr" if image.file_format == "OPEN_EXR" else "png"
-                image.filepath_raw = f"{directory}/{tex.name}.{ext}"
-
-                log.info("Saving image to %s", image.filepath_raw)
-                image.save()
-
             image.use_fake_user = self.parent.operator.add_fake_user
 
             image.update()
