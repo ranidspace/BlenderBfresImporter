@@ -27,7 +27,7 @@ class MeshImporter:
 
         if self.parent.operator.custom_normals:
             self.__add_split_normals()
-        if self.lod_vtxs[0].get("_c0"):
+        if self.lod_vtxs[0].get("_c0") is not None:
             self.__add_vtx_colors()
         self.__add_uv_map()
         self.__add_vtx_weights()

@@ -49,9 +49,9 @@ class ModelImporter:
 
     @staticmethod
     def __get_vertices(fvtx) -> list:
-        vertices = {}
-        for attribute in fvtx.attributes.values():
-            vtx_atrribute = attribute.name
+        attributes = [None] * len(fvtx.attributes)
+
+        for a, attribute in enumerate(fvtx.attributes.values()):
             buffer = fvtx.buffers[attribute.buffer_idx]
             fmt = AttributeFormat(attribute.format_.value)
 
@@ -61,20 +61,10 @@ class ModelImporter:
                     offset = i * buffer.stride
                     data[i] = struct.unpack_from(fmt.read, buffer.data[0], offset)
                 except struct.error as e:
-                    log.exception(
-                        "Submesh %d reading out of bounds for attribute '%s' (offs=0x%X len=0x%X fmt=%s)",
-                        i,
-                        vtx_atrribute,
-                        offset,
-                        len(buffer.data),
-                        fmt,
-                    )
-                    raise MalformedFileError(
-                        "Submesh {idx} reading out of bounds for attribute '{name}'".format(idx=i, name=vtx_atrribute)
-                    ) from e
+                    message = f"Submesh {i} reading out of bounds for attribute '{attribute.name}'"
+                    raise MalformedFileError(message) from e
 
             data = np.array(data)
-
             if fmt.func:
                 data = fmt.func(data)
 
@@ -82,10 +72,12 @@ class ModelImporter:
             elif fmt.AttribType.INTEGER not in fmt.flags and fmt.AttribType.SCALED not in fmt.flags:
                 # SNORM
                 if fmt.AttribType.SIGNED in fmt.flags:
-                    np.where(data == fmt.min, -1, np.divide(data, fmt.max))
+                    data = np.where(data == fmt.min, -1, np.divide(data, fmt.max))
                 # UNORM
                 else:
                     data = np.divide(data, fmt.max)
 
-            vertices[vtx_atrribute] = data
-        return [dict(zip(vertices, t, strict=True)) for t in zip(*vertices.values(), strict=True)]
+            attributes[a] = data
+        return [
+            dict(zip([v.name for v in fvtx.attributes.values()], t, strict=True)) for t in zip(*attributes, strict=True)
+        ]
