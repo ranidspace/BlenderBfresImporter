@@ -1,7 +1,7 @@
 import io
 import logging
 
-from io_scene_bfres.bfrespy import core
+from ..bfrespy import core
 
 from .brti import BRTI
 

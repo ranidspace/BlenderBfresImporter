@@ -2,8 +2,7 @@ import io
 import logging
 from enum import IntEnum
 
-from io_scene_bfres.bfrespy import core
-
+from ..bfrespy import core
 from .pixelfmt import TextureFormat
 from .pixelfmt.formatinfo import blk_dims, bpps
 from .pixelfmt.swizzle import deswizzle, div_round_up, pow2_round_up
