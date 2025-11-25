@@ -1,7 +1,7 @@
 import logging
+
+from . import bcn, formatinfo, rgb
 from .base import TextureFormat, fmts, types
-from . import rgb, bcn
-from . import formatinfo
 
 log = logging.getLogger(__name__)
 

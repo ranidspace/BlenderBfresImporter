@@ -2,7 +2,6 @@ import io
 import logging
 
 from ..bfrespy import core
-
 from .brti import BRTI
 
 log = logging.getLogger(__name__)

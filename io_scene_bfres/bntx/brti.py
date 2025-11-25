@@ -1,11 +1,12 @@
 import io
 import logging
+import math
 from enum import IntEnum
 
 from ..bfrespy import core
 from .pixelfmt import TextureFormat
 from .pixelfmt.formatinfo import blk_dims, bpps
-from .pixelfmt.swizzle import deswizzle, div_round_up, pow2_round_up
+from .pixelfmt.swizzle import deswizzle, pow2_round_up
 
 log = logging.getLogger(__name__)
 
@@ -102,9 +103,9 @@ class BRTI(core.ResData):
         blk_height_shift = 0
         mip_offset = self.mip_offsets[0]
 
-        size = div_round_up(self.width, self.blk_width) * div_round_up(self.height, self.blk_height) * self.bpp
+        size = math.ceil(self.width / self.blk_width) * math.ceil(self.height / self.blk_height) * self.bpp
 
-        if pow2_round_up(div_round_up(self.height, self.blk_height)) < lines_per_blk_height:
+        if pow2_round_up(math.ceil(self.height / self.blk_height)) < lines_per_blk_height:
             blk_height_shift += 1
 
         result = deswizzle(
