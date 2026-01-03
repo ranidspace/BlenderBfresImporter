@@ -175,11 +175,11 @@ class MeshImporter:
             vertex_colors.data[v.index].color_srgb = col
 
     def __add_uv_map(self):
-        idx = 0
-        while True:
-            attr = f"_u{idx}"
-            if self.fvtx[0].get(attr, None) is None:
-                break
+        log.debug(self.fvtx[0])
+        for attr in self.fvtx[0]:
+            log.debug(attr)
+            if len(attr) != 3 or attr[:2] != "_u":
+                continue
             mdata = self.mesh_ob.data
             uv_layer = mdata.uv_layers.new(name=attr)
             for poly in mdata.polygons:
@@ -189,7 +189,6 @@ class MeshImporter:
                     x, y = self.lod_vtxs[loop.vertex_index][attr][:2]
                     y = 1 - y
                     uvloop.uv.x, uvloop.uv.y = x, y
-            idx += 1
 
     def __add_vtx_weights(self):
         """Add vertex weights (`_w0` attribute) to mesh."""

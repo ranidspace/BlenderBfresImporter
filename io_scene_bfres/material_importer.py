@@ -2,11 +2,33 @@ import logging
 
 import bpy
 import mathutils
-from bpy_extras.node_shader_utils import PrincipledBSDFWrapper
+from bpy_extras.node_shader_utils import PrincipledBSDFWrapper, ShaderImageTextureWrapper
 
 from .bfrespy.common import ResString
 
 log = logging.getLogger(__name__)
+
+get_tex_wrapper = {
+    "_a0": "base_color_texture",
+    "_r0": "roughness_texture",
+    "_m0": "metallic_texture",
+    "_n0": "normalmap_texture",
+    "_e0": "emission_color_texture",
+    "_op0": "alpha_texture",
+}
+texcoord_select = {
+    "_ao0": "ao",
+    "_cp0": "comppaint",
+    "_e0": "emmmap",
+    "_fm0": "sfxmask",
+    "_m0": "mtlmap",
+    "_r0": "rghmap",
+    "_re0": "res0",
+    "_re1": "res1",
+    "_re2": "res2",
+    "_su0": "teamcolormap",
+    "_t0": "trsmap",  # unsure if this is opacity or trm
+}
 
 
 class MaterialImporter:
@@ -43,9 +65,9 @@ class MaterialImporter:
             i += 1
 
             # Get the bpy Texture Wrapper from the sampler name
-            tex_helper_name = self._get_tex_wrapper.get(tex_sampler_name)
+            tex_helper_name = get_tex_wrapper.get(tex_sampler_name)
             if tex_helper_name:
-                tex_helper = getattr(mat_wrap, tex_helper_name)
+                tex_helper: ShaderImageTextureWrapper = getattr(mat_wrap, tex_helper_name)
                 tex_helper.image = image
             else:
                 # Add the texture as a node not connected to anything if no samplers match
@@ -54,6 +76,7 @@ class MaterialImporter:
                 tex_node.location = mathutils.Vector(mat_wrap._grid_to_location(1, -2))
                 tex_node.label = f"{tex_sampler_name} {tex_name}"
                 tex_node.image = image
+                self.set_uv_coords(mat, tex_sampler_name, tex_node)
                 continue
 
             # Mapping
@@ -79,18 +102,27 @@ class MaterialImporter:
                 else:
                     mat.node_tree.links.new(mappingnode.outputs["Vector"], tex_helper.node_image.inputs["Vector"])
 
+            self.set_uv_coords(mat, tex_sampler_name, tex_helper.node_image)
+
         match fmat.shader_assign.shader_archive_name:
             case "Hoian_UBER":
                 self.__shader_hoian(mat, mat_wrap)
 
-    _get_tex_wrapper = {
-        "_a0": "base_color_texture",
-        "_r0": "roughness_texture",
-        "_m0": "metallic_texture",
-        "_n0": "normalmap_texture",
-        "_e0": "emission_color_texture",
-        "_op0": "alpha_texture",
-    }
+    @staticmethod
+    def set_uv_coords(mat: bpy.types.Material, sampler: str, tex_node: bpy.types.ShaderNodeTexImage):
+        selector = texcoord_select.get(sampler)
+        if selector is None:
+            return
+        uv_id = mat.get("SO_texcoord_select_" + selector)
+        if uv_id:
+            tree = mat.node_tree
+
+            uv_node: bpy.types.ShaderNodeUVMap = tree.nodes.new(type="ShaderNodeUVMap")
+            uv_node.uv_map = f"_u{uv_id}"
+            socket_src = uv_node.outputs["UV"]
+
+            tree.links.new(socket_src, tex_node.inputs["Vector"])
+
 
     @staticmethod
     def __add_custom_properties(fmat, mat: bpy.types.Material):
