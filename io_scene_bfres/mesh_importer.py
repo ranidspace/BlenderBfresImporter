@@ -175,9 +175,7 @@ class MeshImporter:
             vertex_colors.data[v.index].color_srgb = col
 
     def __add_uv_map(self):
-        log.debug(self.fvtx[0])
         for attr in self.fvtx[0]:
-            log.debug(attr)
             if len(attr) != 3 or attr[:2] != "_u":
                 continue
             mdata = self.mesh_ob.data
