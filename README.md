@@ -1,3 +1,6 @@
+Notice: This is no longer being developed separately from the blender importer
+addon.
+
 # bfrespy
 
 A port of BfresLibrary to python, intended to be used in a blender importer addon.
