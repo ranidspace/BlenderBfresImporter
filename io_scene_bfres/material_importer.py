@@ -114,7 +114,7 @@ class MaterialImporter:
         if selector is None:
             return
         uv_id = mat.get("SO_texcoord_select_" + selector)
-        if uv_id:
+        if uv_id and uv_id != "0":
             tree = mat.node_tree
 
             uv_node: bpy.types.ShaderNodeUVMap = tree.nodes.new(type="ShaderNodeUVMap")
