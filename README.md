@@ -26,6 +26,14 @@ Animations are not fully supported, but importing the base animation data will i
 
 These animations are stored as Blender Actions, you can select an armature, and in the Armature Data panel, or animation editor, you can select the action. It may be useful for some quick poses.
 
+### Copy bone transforms
+
+If you select an armature, such as a player model, you can import another model such as a hat or clothes with the "Copy bone transforms" option enabled, and it will make constraints to attach those to the model.
+
+This works if the bones on the imported skeleton and the existing selected skeleton have the same names (with an added case if there's a "\_root" suffix on the imported model)
+
+Splatoon headgear will still have to be manually dealt with, though a couple work.
+
 ## References
 
 This addon was originally a fork of [RenaKunisaki/bfres_importer](https://github.com/RenaKunisaki/bfres_importer)
