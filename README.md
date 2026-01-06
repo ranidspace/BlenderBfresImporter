@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Bfres Importer
 
 This is a Blender(3.6+) addon imports the Nintendo .bfres file format.
@@ -42,3 +43,4 @@ This addon was originally a fork of [RenaKunisaki/bfres_importer](https://github
 - [KillzXGaming/SwitchToolbox](https://github.com/KillzXGaming/Switch-Toolbox)
 - [KillzXGaming/BfresLibrary](https://github.com/KillzXGaming/BfresLibrary/)
 - [python-pillow/Pillow](https://github.com/python-pillow/Pillow) (For BC6/BC7 Importing)
+- [Syroot/NintenTools.Bfres](https://gitlab.com/Syroot/NintenTools.Bfres/tree/master/src/Syroot.NintenTools.Bfres)
