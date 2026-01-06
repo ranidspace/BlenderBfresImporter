@@ -17,6 +17,8 @@ class SkeletonImporter:
         arm_obj = bpy.data.objects.new(name=name, object_data=amt)
 
         collection.objects.link(arm_obj)
+
+        previous_active = bpy.context.active_object
         bpy.context.view_layer.objects.active = arm_obj
 
         bpy.ops.object.mode_set(mode="EDIT", toggle=False)
@@ -37,12 +39,34 @@ class SkeletonImporter:
                 bone_obj.matrix = mathutils.Matrix.Rotation(math.radians(90), 4, (1, 0, 0)) @ matrix
             bone.matrix = bone_obj.matrix
         bpy.ops.object.mode_set(mode="OBJECT")
+        bpy.context.view_layer.objects.active = previous_active
 
         if fskl.flags_rotation.name == "EULER_XYZ":
             for pb in arm_obj.pose.bones:
                 pb.rotation_mode = "XYZ"
+        if self.operator.copy_bone_transforms:
+            self.copy_transforms(arm_obj, bpy.context.active_object)
 
         return arm_obj
+
+    @staticmethod
+    def copy_transforms(new_armature: bpy.types.Object, active: bpy.types.Object):
+        if active is None or active.type != "ARMATURE":
+            return
+        new_bones = new_armature.pose.bones
+        active_bones = active.pose.bones
+
+        for pose_bone in new_armature.pose.bones:
+            if pose_bone.name in active_bones:
+                SkeletonImporter.__add_constraint(pose_bone, pose_bone.name, active)
+            elif pose_bone.name.lower().endswith("_root") and pose_bone.name[:-5] in active_bones:
+                SkeletonImporter.__add_constraint(pose_bone, pose_bone.name[:-5], active)
+
+    @staticmethod
+    def __add_constraint(pose_bone, bone_name: str, active: bpy.types.Object):
+        constraint = pose_bone.constraints.new("COPY_TRANSFORMS")
+        constraint.target = active
+        constraint.subtarget = bone_name
 
     @staticmethod
     def __bone_matrix(obj):

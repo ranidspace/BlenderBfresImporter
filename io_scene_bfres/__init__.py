@@ -65,6 +65,12 @@ class ImportBFRES(bpy.types.Operator, ImportHelper):
         default=True,
     )
 
+    copy_bone_transforms: BoolProperty(
+        name="Copy Bone Transforms",
+        description="Copies all bone transforms to the selected armature",
+        default=False,
+    )
+
     component_selector: BoolProperty(
         name="Use Component Selector",
         description="Uses the component selector for each texture. Turn it on if the colours look off",
@@ -189,6 +195,7 @@ def import_panel_misc(layout, operator):
         layout.label(text="Misc")
         body = layout.column(align=False)
     if body:
+        body.prop(operator, "copy_bone_transforms")
         body.prop(operator, "add_fake_user")
         body.prop(operator, "import_anims")
 
