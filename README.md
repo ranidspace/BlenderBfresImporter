@@ -8,9 +8,9 @@ Download the zip from the Releases section of the page, and in Blender, open pre
 
 ## Notes
 
-This addon is not fully featured yet, and there's a lot to fix and change. The backend for this addon, [bfrespy](https://github.com/ranidspace/bfrespy), is currently incomplete.
+This extension is not complete, notably Wii U files and any sort of animation cannot be imported.
 
-Wii U files are currently unable to be imported, and a few things, notably skeletal animations are not in the Importer.
+Blender handles skeletal animations very differently and it may not be possible to add it in without calculating everything on every frame. In the meantime, these work with animations exported from Switch Toolbox (which calculates each frame)
 
 ## Tips
 
