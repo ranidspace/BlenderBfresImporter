@@ -15,6 +15,7 @@
 import numpy as np
 from .base import TextureFormat
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -24,7 +25,7 @@ class R8(TextureFormat):
 
     @staticmethod
     def decodepixels(data):
-        pixels = np.frombuffer(data, dtype='B') / 255
+        pixels = np.frombuffer(data, dtype="B") / 255
         rgba = np.empty((pixels.size * 4), dtype=pixels.dtype)
         rgba[0::4] = pixels
         rgba[1::4] = pixels
@@ -40,8 +41,8 @@ class R5G6B5(TextureFormat):
 
     @staticmethod
     def decodepixels(data):
-        pixels = np.frombuffer(data, dtype='H')
-        r = ((pixels & 0x1F)) / 31
+        pixels = np.frombuffer(data, dtype="H")
+        r = (pixels & 0x1F) / 31
         g = ((pixels >> 5) & 0x3F) / 63
         b = ((pixels >> 11) & 0x1F) / 31
         rgba = np.empty((pixels.size * 4), dtype=r.dtype)
@@ -59,7 +60,7 @@ class R8G8(TextureFormat):
 
     @staticmethod
     def decodepixels(data):
-        pixels = np.frombuffer(data, dtype='B') / 255
+        pixels = np.frombuffer(data, dtype="B") / 255
         rgba = np.empty((pixels.size * 2), dtype=pixels.dtype)
         rgba[0::4] = pixels[0::2]
         rgba[1::4] = pixels[1::2]
@@ -77,7 +78,7 @@ class R16(TextureFormat):
     @staticmethod
     def decodepixels(data):
         rgba = np.empty(len(data) * 4, dtype=np.float32)
-        rgba[0::4] = np.frombuffer(data, dtype='B') / 65536
+        rgba[0::4] = np.frombuffer(data, dtype="B") / 65536
         rgba[1::4] = 0
         rgba[2::4] = 0
         rgba[3::4] = 0
@@ -97,7 +98,7 @@ class R11G11B10(TextureFormat):
 
     @staticmethod
     def decodepixels(data):
-        pixels = np.frombuffer(data, dtype='I')
+        pixels = np.frombuffer(data, dtype="I")
         r = (pixels & 0x07FF) / 2047
         g = ((pixels >> 11) & 0x07FF) / 2047
         b = ((pixels >> 22) & 0x03FF) / 1023
@@ -118,7 +119,7 @@ class R32(TextureFormat):
     @staticmethod
     def decodepixels(data):
         rgba = np.empty((len(data) * 4))
-        rgba[0::4] = np.frombuffer(data, dtype='I') / 4294967295
+        rgba[0::4] = np.frombuffer(data, dtype="I") / 4294967295
         rgba[1::4] = 0
         rgba[2::4] = 0
         rgba[3::4] = 0

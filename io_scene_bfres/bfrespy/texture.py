@@ -2,7 +2,7 @@ from . import core
 
 
 class TextureShared(core.ResData):
-    """Represents an FMDL subfile in a ResFile storing multi-dimensional 
+    """Represents an FMDL subfile in a ResFile storing multi-dimensional
     texture data.
     """
 
@@ -14,7 +14,7 @@ class TextureShared(core.ResData):
         self.depth: int
         self.mipcount: int
         self.array_length: int
-        self.userdata: 'UserData'
+        self.userdata: "UserData"
 
     def __repr__(self):
         return "TextureShared{" + str(self.name) + "}"

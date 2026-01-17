@@ -3,6 +3,7 @@ from ..core import ResData, ResFileLoader
 
 class MemoryPool(ResData):
     """Represents a buffer info section."""
+
     __SIZE = 288
 
     def __init__(self):
@@ -27,9 +28,10 @@ class BufferSize(ResData):
 
 
 class BufferInfo(ResData):
-    """Represents an buffer info section in a ResFile subfile. References 
+    """Represents an buffer info section in a ResFile subfile. References
     vertex and index buffers.
     """
+
     # Public Properties
     buff_offs: int
     vtx_buffer_data: list[bytes] = []

@@ -3,6 +3,7 @@ from enum import IntEnum, IntFlag
 
 class GX2AAMode(IntEnum):
     """Represents the AA modes (number of samples) for a surface."""
+
     MODE1X = 0
     MODE2X = 1
     MODE4X = 2
@@ -11,6 +12,7 @@ class GX2AAMode(IntEnum):
 
 class GX2AttribType(IntEnum):
     """Represents the read format of a vertex attribute entry"""
+
     GX2_ATTRIB_TYPE_8 = 0x00
     GX2_ATTRIB_TYPE_4_4 = 0x01
     GX2_ATTRIB_TYPE_16 = 0x02
@@ -35,6 +37,7 @@ class GX2AttribType(IntEnum):
 
 class GX2AttribFlag(IntFlag):
     """Represents the flags of a vertex attribute entry"""
+
     GX2_ATTRIB_FLAG_INTEGER = 0x100
     GX2_ATTRIB_FLAG_SIGNED = 0x200
     GX2_ATTRIB_FLAG_DEGAMMA = 0x400
@@ -43,80 +46,82 @@ class GX2AttribFlag(IntFlag):
 
 class GX2AttribFormat(IntEnum):
     """Represents the format of a vertex attribute entry"""
+
     # 8 bits (8 x 1)
-    FORMAT_8_UNORM = 0X00000000
-    FORMAT_8_UINT = 0X00000100
-    FORMAT_8_SNORM = 0X00000200
-    FORMAT_8_SINT = 0X00000300
-    FORMAT_8_UINTTOSINGLE = 0X00000800
-    FORMAT_8_SINTTOSINGLE = 0X00000A00
+    FORMAT_8_UNORM = 0x00000000
+    FORMAT_8_UINT = 0x00000100
+    FORMAT_8_SNORM = 0x00000200
+    FORMAT_8_SINT = 0x00000300
+    FORMAT_8_UINTTOSINGLE = 0x00000800
+    FORMAT_8_SINTTOSINGLE = 0x00000A00
     # 8 bits (4 x 2)
     FORMAT_4_4_UNORM = 0x00000001
     # 16 bits (16 x 1)
-    FORMAT_16_UNORM = 0X00000002
-    FORMAT_16_UINT = 0X00000102
-    FORMAT_16_SNORM = 0X00000202
-    FORMAT_16_SINT = 0X00000302
-    FORMAT_16_SINGLE = 0X00000803
-    FORMAT_16_UINTTOSINGLE = 0X00000802
-    FORMAT_16_SINTTOSINGLE = 0X00000A02
+    FORMAT_16_UNORM = 0x00000002
+    FORMAT_16_UINT = 0x00000102
+    FORMAT_16_SNORM = 0x00000202
+    FORMAT_16_SINT = 0x00000302
+    FORMAT_16_SINGLE = 0x00000803
+    FORMAT_16_UINTTOSINGLE = 0x00000802
+    FORMAT_16_SINTTOSINGLE = 0x00000A02
     # 16 bits (8 x 2)
-    FORMAT_8_8_UNORM = 0X00000004
-    FORMAT_8_8_UINT = 0X00000104
-    FORMAT_8_8_SNORM = 0X00000204
-    FORMAT_8_8_SINT = 0X00000304
-    FORMAT_8_8_UINTTOSINGLE = 0X00000804
-    FORMAT_8_8_SINTTOSINGLE = 0X00000A04
+    FORMAT_8_8_UNORM = 0x00000004
+    FORMAT_8_8_UINT = 0x00000104
+    FORMAT_8_8_SNORM = 0x00000204
+    FORMAT_8_8_SINT = 0x00000304
+    FORMAT_8_8_UINTTOSINGLE = 0x00000804
+    FORMAT_8_8_SINTTOSINGLE = 0x00000A04
     # 32 bits (32 x 1)
-    FORMAT_32_UINT = 0X00000105
-    FORMAT_32_SINT = 0X00000305
-    FORMAT_32_SINGLE = 0X00000806
+    FORMAT_32_UINT = 0x00000105
+    FORMAT_32_SINT = 0x00000305
+    FORMAT_32_SINGLE = 0x00000806
     # 32 bits (16 x 2)
-    FORMAT_16_16_UNORM = 0X00000007
-    FORMAT_16_16_UINT = 0X00000107
-    FORMAT_16_16_SNORM = 0X00000207
-    FORMAT_16_16_SINT = 0X00000307
-    FORMAT_16_16_SINGLE = 0X00000808
-    FORMAT_16_16_UINTTOSINGLE = 0X00000807
-    FORMAT_16_16_SINTTOSINGLE = 0X00000A07
+    FORMAT_16_16_UNORM = 0x00000007
+    FORMAT_16_16_UINT = 0x00000107
+    FORMAT_16_16_SNORM = 0x00000207
+    FORMAT_16_16_SINT = 0x00000307
+    FORMAT_16_16_SINGLE = 0x00000808
+    FORMAT_16_16_UINTTOSINGLE = 0x00000807
+    FORMAT_16_16_SINTTOSINGLE = 0x00000A07
     # 32 bits (10/11 x 3)
-    FORMAT_10_11_11_SINGLE = 0X00000809
+    FORMAT_10_11_11_SINGLE = 0x00000809
     # 32 bits (8 x 4)
-    FORMAT_8_8_8_8_UNORM = 0X0000000A
-    FORMAT_8_8_8_8_UINT = 0X0000010A
-    FORMAT_8_8_8_8_SNORM = 0X0000020A
-    FORMAT_8_8_8_8_SINT = 0X0000030A
-    FORMAT_8_8_8_8_UINTTOSINGLE = 0X0000080A
-    FORMAT_8_8_8_8_SINTTOSINGLE = 0X00000A0A
+    FORMAT_8_8_8_8_UNORM = 0x0000000A
+    FORMAT_8_8_8_8_UINT = 0x0000010A
+    FORMAT_8_8_8_8_SNORM = 0x0000020A
+    FORMAT_8_8_8_8_SINT = 0x0000030A
+    FORMAT_8_8_8_8_UINTTOSINGLE = 0x0000080A
+    FORMAT_8_8_8_8_SINTTOSINGLE = 0x00000A0A
     # 32 bits (10 x 3 + 2)
-    FORMAT_10_10_10_2_UNORM = 0X0000000B
-    FORMAT_10_10_10_2_UINT = 0X0000010B
-    FORMAT_10_10_10_2_SNORM = 0X0000020B  # High 2 bits are UNorm
-    FORMAT_10_10_10_2_SINT = 0X0000030B
+    FORMAT_10_10_10_2_UNORM = 0x0000000B
+    FORMAT_10_10_10_2_UINT = 0x0000010B
+    FORMAT_10_10_10_2_SNORM = 0x0000020B  # High 2 bits are UNorm
+    FORMAT_10_10_10_2_SINT = 0x0000030B
     # 64 bits (32 x 2)
-    FORMAT_32_32_UINT = 0X0000010C
-    FORMAT_32_32_SINT = 0X0000030C
-    FORMAT_32_32_SINGLE = 0X0000080D
+    FORMAT_32_32_UINT = 0x0000010C
+    FORMAT_32_32_SINT = 0x0000030C
+    FORMAT_32_32_SINGLE = 0x0000080D
     # 64 bits (16 x 4)
-    FORMAT_16_16_16_16_UNORM = 0X0000000E
-    FORMAT_16_16_16_16_UINT = 0X0000010E
-    FORMAT_16_16_16_16_SNORM = 0X0000020E
-    FORMAT_16_16_16_16_SINT = 0X0000030E
-    FORMAT_16_16_16_16_SINGLE = 0X0000080F
-    FORMAT_16_16_16_16_UINTTOSINGLE = 0X0000080E
-    FORMAT_16_16_16_16_SINTTOSINGLE = 0X00000A0E
+    FORMAT_16_16_16_16_UNORM = 0x0000000E
+    FORMAT_16_16_16_16_UINT = 0x0000010E
+    FORMAT_16_16_16_16_SNORM = 0x0000020E
+    FORMAT_16_16_16_16_SINT = 0x0000030E
+    FORMAT_16_16_16_16_SINGLE = 0x0000080F
+    FORMAT_16_16_16_16_UINTTOSINGLE = 0x0000080E
+    FORMAT_16_16_16_16_SINTTOSINGLE = 0x00000A0E
     # 96 bits (32 x 3)
-    FORMAT_32_32_32_UINT = 0X00000110
-    FORMAT_32_32_32_SINT = 0X00000310
-    FORMAT_32_32_32_SINGLE = 0X00000811
+    FORMAT_32_32_32_UINT = 0x00000110
+    FORMAT_32_32_32_SINT = 0x00000310
+    FORMAT_32_32_32_SINGLE = 0x00000811
     # 128 bits (32 x 4){
-    FORMAT_32_32_32_32_UINT = 0X00000112
-    FORMAT_32_32_32_32_SINT = 0X00000312
-    FORMAT_32_32_32_32_SINGLE = 0X00000813
+    FORMAT_32_32_32_32_UINT = 0x00000112
+    FORMAT_32_32_32_32_SINT = 0x00000312
+    FORMAT_32_32_32_32_SINGLE = 0x00000813
 
 
 class GX2BlendCombine(IntEnum):
     """Represents how the terms of the blend function are combined."""
+
     ADD = 0
     SOURCE_MINUS_DESTINATION = 1
     MINIMUM = 2
@@ -126,6 +131,7 @@ class GX2BlendCombine(IntEnum):
 
 class GX2BlendFunction(IntEnum):
     """Represents the factors used in the blend function"""
+
     ZERO = 0
     ONE = 1
     SOURCE_COLOR = 2
@@ -149,6 +155,7 @@ class GX2BlendFunction(IntEnum):
 
 class GX2CompareFunction(IntEnum):
     """Represents compare functions used for depth and stencil tests."""
+
     NEVER = 0
     LESS = 1
     EQUAL = 2
@@ -161,6 +168,7 @@ class GX2CompareFunction(IntEnum):
 
 class GX2CompSel(IntEnum):
     """Represents the source channels to map to a color channel in textures."""
+
     CHANNELR = 0
     CHANNELG = 1
     CHANNELB = 2
@@ -171,12 +179,14 @@ class GX2CompSel(IntEnum):
 
 class GX2FrontFaceMode(IntEnum):
     """Represents the vertex order of front-facing polygons."""
+
     COUNTERCLOCKWISE = 0
     CLOCKWISE = 1
 
 
 class GX2IndexFormat(IntEnum):
     """Represents the type in which vertex indices are stored."""
+
     UINT16_LITTLE_ENDIAN = 0
     UINT32_LITTLE_ENDIAN = 1
     UINT16 = 4
@@ -238,6 +248,7 @@ class GX2LogicOp(IntEnum):
 class GX2PolygonMode(IntEnum):
     """Represents the base primitive used to draw each side of the polygon
     when dual-sided polygon mode is enabled."""
+
     POINT = 0
     LINE = 1
     TRIANGLE = 2
@@ -309,6 +320,7 @@ class GX2PrimitiveType(IntEnum):
 
 class GX2StencilFunction(IntEnum):
     """Represents the stencil function to be performed if stencil tests pass."""
+
     KEEP = 0
     ZERO = 1
     REPLACE = 2
@@ -321,6 +333,7 @@ class GX2StencilFunction(IntEnum):
 
 class GX2SurfaceDim(IntEnum):
     """Represents shapes of a given surface or texture."""
+
     DIM1D = 0
     DIM2D = 1
     DIM3D = 2
@@ -333,49 +346,50 @@ class GX2SurfaceDim(IntEnum):
 
 class GX2SurfaceFormat(IntEnum):
     """Represents desired texture, color-buffer, depth-buffer, or scan-buffer formats."""
-    INVALID = 0X00000000
-    TC_R8_UNORM = 0X00000001
-    TC_R8_UINT = 0X00000101
-    TC_R8_SNORM = 0X00000201
-    TC_R8_SINT = 0X00000301
-    T_R4_G4_UNORM = 0X00000002
-    TCD_R16_UNORM = 0X00000005
-    TC_R16_UINT = 0X00000105
-    TC_R16_SNORM = 0X00000205
-    TC_R10_G10_B10_A2_SNORM = 0X00000219
-    TC_R10_G10_B10_A2_SINT = 0X00000319
-    TCS_R8_G8_B8_A8_UNORM = 0X0000001A
-    TC_R8_G8_B8_A8_UINT = 0X0000011A
-    TC_R8_G8_B8_A8_SNORM = 0X0000021A
-    TC_R8_G8_B8_A8_SINT = 0X0000031A
-    TCS_R8_G8_B8_A8_SRGB = 0X0000041A
-    TCS_A2_B10_G10_R10_UNORM = 0X0000001B
-    TC_A2_B10_G10_R10_UINT = 0X0000011B
-    D_D32_FLOAT_S8_UINT_X24 = 0X0000081C
-    T_R32_FLOAT_X8_X24 = 0X0000081C
-    T_X32_G8_UINT_X24 = 0X0000011C
-    TC_R32_G32_UINT = 0X0000011D
-    TC_R32_G32_SINT = 0X0000031D
-    TC_R32_G32_FLOAT = 0X0000081E
-    TC_R16_G16_B16_A16_UNORM = 0X0000001F
-    TC_R16_G16_B16_A16_UINT = 0X0000011F
-    TC_R16_G16_B16_A16_SNORM = 0X0000021F
-    TC_R16_G16_B16_A16_SINT = 0X0000031F
-    TC_R16_G16_B16_A16_FLOAT = 0X00000820
-    TC_R32_G32_B32_A32_UINT = 0X00000122
-    TC_R32_G32_B32_A32_SINT = 0X00000322
-    TC_R32_G32_B32_A32_FLOAT = 0X00000823
-    T_BC1_UNORM = 0X00000031
-    T_BC1_SRGB = 0X00000431
-    T_BC2_UNORM = 0X00000032
-    T_BC2_SRGB = 0X00000432
-    T_BC3_UNORM = 0X00000033
-    T_BC3_SRGB = 0X00000433
-    T_BC4_UNORM = 0X00000034
-    T_BC4_SNORM = 0X00000234
-    T_BC5_UNORM = 0X00000035
-    T_BC5_SNORM = 0X00000235
-    T_NV12_UNORM = 0X00000081
+
+    INVALID = 0x00000000
+    TC_R8_UNORM = 0x00000001
+    TC_R8_UINT = 0x00000101
+    TC_R8_SNORM = 0x00000201
+    TC_R8_SINT = 0x00000301
+    T_R4_G4_UNORM = 0x00000002
+    TCD_R16_UNORM = 0x00000005
+    TC_R16_UINT = 0x00000105
+    TC_R16_SNORM = 0x00000205
+    TC_R10_G10_B10_A2_SNORM = 0x00000219
+    TC_R10_G10_B10_A2_SINT = 0x00000319
+    TCS_R8_G8_B8_A8_UNORM = 0x0000001A
+    TC_R8_G8_B8_A8_UINT = 0x0000011A
+    TC_R8_G8_B8_A8_SNORM = 0x0000021A
+    TC_R8_G8_B8_A8_SINT = 0x0000031A
+    TCS_R8_G8_B8_A8_SRGB = 0x0000041A
+    TCS_A2_B10_G10_R10_UNORM = 0x0000001B
+    TC_A2_B10_G10_R10_UINT = 0x0000011B
+    D_D32_FLOAT_S8_UINT_X24 = 0x0000081C
+    T_R32_FLOAT_X8_X24 = 0x0000081C
+    T_X32_G8_UINT_X24 = 0x0000011C
+    TC_R32_G32_UINT = 0x0000011D
+    TC_R32_G32_SINT = 0x0000031D
+    TC_R32_G32_FLOAT = 0x0000081E
+    TC_R16_G16_B16_A16_UNORM = 0x0000001F
+    TC_R16_G16_B16_A16_UINT = 0x0000011F
+    TC_R16_G16_B16_A16_SNORM = 0x0000021F
+    TC_R16_G16_B16_A16_SINT = 0x0000031F
+    TC_R16_G16_B16_A16_FLOAT = 0x00000820
+    TC_R32_G32_B32_A32_UINT = 0x00000122
+    TC_R32_G32_B32_A32_SINT = 0x00000322
+    TC_R32_G32_B32_A32_FLOAT = 0x00000823
+    T_BC1_UNORM = 0x00000031
+    T_BC1_SRGB = 0x00000431
+    T_BC2_UNORM = 0x00000032
+    T_BC2_SRGB = 0x00000432
+    T_BC3_UNORM = 0x00000033
+    T_BC3_SRGB = 0x00000433
+    T_BC4_UNORM = 0x00000034
+    T_BC4_SNORM = 0x00000234
+    T_BC5_UNORM = 0x00000035
+    T_BC5_SNORM = 0x00000235
+    T_NV12_UNORM = 0x00000081
 
 
 class GX2SurfaceUse(IntFlag):
@@ -383,6 +397,7 @@ class GX2SurfaceUse(IntFlag):
     target is one that will be copied to a TV scan buffer. It needs to be
     designated to handle certain display corner cases (when a HD surface
     must be scaled down to display in NTSC/PAL)."""
+
     TEXTURE = 1 << 0
     COLOR_BUFFER = 1 << 1
     DEPTH_BUFFER = 1 << 2
@@ -398,6 +413,7 @@ class GX2TexAnisoRatio(IntEnum):
     """Represents maximum desired anisotropic filter ratios.
     Higher ratios give better image quality, but slower performance.
     """
+
     RATIO_1_1 = 0
     RATIO_2_1 = 1
     RATIO_4_1 = 2
@@ -407,6 +423,7 @@ class GX2TexAnisoRatio(IntEnum):
 
 class GX2TexBorderType(IntEnum):
     """Represents type of border color to use."""
+
     CLEAR_BLACK = 0
     SOLID_BLACK = 1
     SOLID_WHITE = 2
@@ -415,6 +432,7 @@ class GX2TexBorderType(IntEnum):
 
 class GX2TexClamp(IntEnum):
     """Represents how to treat texture coordinates outside of the normalized coordinate texture range."""
+
     WRAP = 0
     MIRROR = 1
     CLAMP = 2
@@ -428,6 +446,7 @@ class GX2TexClamp(IntEnum):
 
 class GX2TexMipFilterType(IntEnum):
     """Represents desired texture filter options between mip levels."""
+
     NO_MIP = 0
     POINT = 1
     LINEAR = 2
@@ -435,12 +454,14 @@ class GX2TexMipFilterType(IntEnum):
 
 class GX2TexXYFilterType(IntEnum):
     """Represents desired texture filter options within a plane."""
+
     POINT = 0
     BILINEAR = 1
 
 
 class GX2TexZFilterType(IntEnum):
     """Represents desired texture filter options between Z planes."""
+
     USE_XY = 0
     POINT = 1
     LINEAR = 2
@@ -448,6 +469,7 @@ class GX2TexZFilterType(IntEnum):
 
 class GX2TileMode(IntEnum):
     """Represents the desired tiling modes for a surface."""
+
     DEFAULT = 0
     LINEAR_ALIGNED = 1
     MODE1D_TILED_THIN1 = 2

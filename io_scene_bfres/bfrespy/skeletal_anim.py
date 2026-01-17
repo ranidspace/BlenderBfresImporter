@@ -9,9 +9,10 @@ class SkeletonAnim(core.ResData):
     """Represents an FSKA subfile in a ResFile, storing armature animations of
     Bone instances in a Skeleton.
     """
+
     _SIGNATURE = "FSKA"
     _FLAGS_MASK_SCALE = 0b00000000_00000000_00000011_00000000
-    _FLAGS_MASK_ROTATE = 0B00000000_00000000_01110000_00000000
+    _FLAGS_MASK_ROTATE = 0b00000000_00000000_01110000_00000000
     _FLAGS_MASK_ANIM_SETTINGS = 0b00000000_00000000_00000000_00001111
 
     class SkeletalAnimFlags(IntFlag):
@@ -47,8 +48,8 @@ class SkeletonAnim(core.ResData):
 
     def __init__(self) -> None:
         self._flags = 0
-        self.name = ''
-        self.path = ''
+        self.name = ""
+        self.path = ""
         self.flags_anim_settings = 0
         self.flags_scale = self.SkeletalAnimFlagsScale.MAYA
         self.flags_rotate = self.SkeletalAnimFlagsRotate.EULER_XYZ
@@ -67,9 +68,7 @@ class SkeletonAnim(core.ResData):
         """The SkeletalAnimFlags mode used
         to control looping and baked settings.
         """
-        return self.SkeletalAnimFlags(
-            self._flags & self._FLAGS_MASK_ANIM_SETTINGS
-        )
+        return self.SkeletalAnimFlags(self._flags & self._FLAGS_MASK_ANIM_SETTINGS)
 
     @flags_anim_settings.setter
     def flags_anim_settings(self, value: int):
@@ -81,7 +80,7 @@ class SkeletonAnim(core.ResData):
 
     @loop.setter
     def loop(self, value: bool):
-        if (value):
+        if value:
             self.flags_anim_settings |= self.SkeletalAnimFlags.LOOPING
         else:
             self.flags_anim_settings &= ~self.SkeletalAnimFlags.LOOPING
@@ -92,7 +91,7 @@ class SkeletonAnim(core.ResData):
 
     @baked.setter
     def baked(self, value: bool):
-        if (value):
+        if value:
             self.flags_anim_settings |= self.SkeletalAnimFlags.BAKED_CURVE
         else:
             self.flags_anim_settings &= ~self.SkeletalAnimFlags.BAKED_CURVE
@@ -102,9 +101,7 @@ class SkeletonAnim(core.ResData):
         """The SkeletalAnimFlags mode used
         to control looping and baked settings.
         """
-        return self.SkeletalAnimFlagsScale(
-            self._flags & self._FLAGS_MASK_SCALE
-        )
+        return self.SkeletalAnimFlagsScale(self._flags & self._FLAGS_MASK_SCALE)
 
     @flags_scale.setter
     def flags_scale(self, value: SkeletalAnimFlagsScale):
@@ -115,9 +112,7 @@ class SkeletonAnim(core.ResData):
         """The SkeletalAnimFlags mode used
         to control looping and baked settings.
         """
-        return self.SkeletalAnimFlagsRotate(
-            self._flags & self._FLAGS_MASK_ROTATE
-        )
+        return self.SkeletalAnimFlagsRotate(self._flags & self._FLAGS_MASK_ROTATE)
 
     @flags_rotate.setter
     def flags_rotate(self, value: SkeletalAnimFlagsRotate):
@@ -125,8 +120,8 @@ class SkeletonAnim(core.ResData):
 
     def load(self, loader: core.ResFileLoader):
         loader._check_signature(self._SIGNATURE)
-        if (loader.is_switch):
-            if (loader.res_file.version_major2 >= 9):
+        if loader.is_switch:
+            if loader.res_file.version_major2 >= 9:
                 self._flags = loader.read_uint32()
             else:
                 loader.load_header_block()
@@ -137,7 +132,7 @@ class SkeletonAnim(core.ResData):
             bind_idx_array = loader.read_offset()
             bone_anim_array_offset = loader.read_offset()
             self.userdata = loader.load_dict_values(common.UserData)
-            if (loader.res_file.version_major2 < 9):
+            if loader.res_file.version_major2 < 9:
                 self._flags = loader.read_uint32()
 
             self.frame_cnt = loader.read_int32()
@@ -146,24 +141,19 @@ class SkeletonAnim(core.ResData):
             num_bone_anim = loader.read_uint16()
             num_userdata = loader.read_uint16()
 
-            if (loader.res_file.version_major2 < 9):
+            if loader.res_file.version_major2 < 9:
                 loader.read_uint32()  # Padding
 
-            self.bone_anims = loader.load_list(
-                BoneAnim, num_bone_anim, bone_anim_array_offset
-            )
-            self.bind_idxs = loader.load_custom(
-                tuple, lambda: loader.read_int16s(num_bone_anim),
-                bind_idx_array
-            )
+            self.bone_anims = loader.load_list(BoneAnim, num_bone_anim, bone_anim_array_offset)
+            self.bind_idxs = loader.load_custom(tuple, lambda: loader.read_int16s(num_bone_anim), bind_idx_array)
         else:
             num_bone_anim = 0
-            if (loader.res_file.version >= 0x02040000):
+            if loader.res_file.version >= 0x02040000:
                 self.name = loader.load_string()
                 self.path = loader.load_string()
                 self._flags = loader.read_uint32()
 
-                if (loader.res_file.version >= 0x03040000):
+                if loader.res_file.version >= 0x03040000:
                     self.frame_cnt = loader.read_int32()
                     num_bone_anim = loader.read_uint16()
                     num_userdata = loader.read_uint16()
@@ -179,9 +169,7 @@ class SkeletonAnim(core.ResData):
 
                 self.bone_anims = loader.load_list(BoneAnim, num_bone_anim)
                 self.bind_skeleton = loader.load(models.Skeleton)
-                self.bind_idxs = loader.load_custom(
-                    tuple, lambda: loader.read_int16s(num_bone_anim)
-                )
+                self.bind_idxs = loader.load_custom(tuple, lambda: loader.read_int16s(num_bone_anim))
                 self.userdata = loader.load_dict(common.UserData)
             else:
                 self._flags = loader.read_uint32()
@@ -193,15 +181,14 @@ class SkeletonAnim(core.ResData):
                 self.path = loader.load_string()
                 self.bone_anims = loader.load_list(BoneAnim, num_bone_anim)
                 self.bind_skeleton = loader.load(models.Skeleton)
-                self.bind_idxs = loader.load_custom(
-                    tuple, lambda: loader.read_int16s(num_bone_anim)
-                )
+                self.bind_idxs = loader.load_custom(tuple, lambda: loader.read_int16s(num_bone_anim))
 
 
 class BoneAnim(core.ResData):
     """Represents the animation of a single Bone in a SkeletalAnim subfile."""
+
     _FLAGS_MASK_BASE = 0b00000000_00000000_00000000_00111000
-    _FLAGS_MASK_CURVE = 0B00000000_00000000_11111111_11000000
+    _FLAGS_MASK_CURVE = 0b00000000_00000000_11111111_11000000
     _FLAGS_MASK_TRANSFORM = 0b00001111_10000000_00000000_00000000
 
     def __init__(self):
@@ -224,9 +211,7 @@ class BoneAnim(core.ResData):
         """The SkeletalAnimFlags mode used
         to control looping and baked settings.
         """
-        return BoneAnimFlagsBase(
-            self._flags & self._FLAGS_MASK_BASE
-        )
+        return BoneAnimFlagsBase(self._flags & self._FLAGS_MASK_BASE)
 
     @flags_base.setter
     def flags_base(self, value: BoneAnimFlagsBase):
@@ -237,9 +222,7 @@ class BoneAnim(core.ResData):
         """The SkeletalAnimFlags mode used
         to control looping and baked settings.
         """
-        return BoneAnimsFlagCurve(
-            self._flags & self._FLAGS_MASK_CURVE
-        )
+        return BoneAnimsFlagCurve(self._flags & self._FLAGS_MASK_CURVE)
 
     @flags_curve.setter
     def flags_curve(self, value: BoneAnimsFlagCurve):
@@ -250,20 +233,18 @@ class BoneAnim(core.ResData):
         """The SkeletalAnimFlags mode used
         to control looping and baked settings.
         """
-        return BoneAnimFlagsTransform(
-            self._flags & self._FLAGS_MASK_TRANSFORM
-        )
+        return BoneAnimFlagsTransform(self._flags & self._FLAGS_MASK_TRANSFORM)
 
     @flags_transform.setter
     def flags_transform(self, value: BoneAnimFlagsTransform):
         self._flags &= ~self._FLAGS_MASK_TRANSFORM | value
 
     def load(self, loader: core.ResFileLoader):
-        if (loader.is_switch):
+        if loader.is_switch:
             self.name = loader.load_string()
             curve_offs = loader.read_offset()
             base_data_offs = loader.read_offset()
-            if (loader.res_file.version_major2 >= 9):
+            if loader.res_file.version_major2 >= 9:
                 unk1 = loader.read_int64()
                 unk2 = loader.read_int64()
             self._flags = loader.read_uint32()
@@ -275,12 +256,9 @@ class BoneAnim(core.ResData):
             padding = loader.read_int32()
 
             self.base_data = loader.load_custom(
-                BoneAnimData, lambda: BoneAnimData(loader, self.flags_base),
-                base_data_offs
+                BoneAnimData, lambda: BoneAnimData(loader, self.flags_base), base_data_offs
             )
-            self.curves = loader.load_list(
-                common.AnimCurve, num_curve, curve_offs
-            )
+            self.curves = loader.load_list(common.AnimCurve, num_curve, curve_offs)
         else:
             self._flags = loader.read_uint32()
             self.name = loader.load_string()
@@ -290,15 +268,14 @@ class BoneAnim(core.ResData):
             self.begin_base_translate = loader.read_byte()
             self.begin_curve = loader.read_byte()
             self.curves = loader.load_list(common.AnimCurve, num_curve)
-            self.base_data = loader.load_custom(
-                BoneAnimData, lambda: BoneAnimData(loader, self.flags_base)
-            )
+            self.base_data = loader.load_custom(BoneAnimData, lambda: BoneAnimData(loader, self.flags_base))
 
 
 class BoneAnimFlagsBase(IntFlag):
     """Represents if initial values exist for the corresponding transformation
     in the base animation data.
     """
+
     SCALE = 1 << 3
     """Initial scaling values exist."""
     ROTATE = 1 << 4
@@ -346,13 +323,7 @@ class BoneAnimData:
 
     def __init__(self, loader: core.ResFileLoader, flags):
         self._flags = 0  # Never in files.
-        self.scale = (loader.read_vector3f()
-                      if BoneAnimFlagsBase.SCALE in flags
-                      else (1, 1, 1))
-        self.rotate = (loader.read_vector4f()
-                       if BoneAnimFlagsBase.ROTATE in flags
-                       else (1, 0, 0, 0))
+        self.scale = loader.read_vector3f() if BoneAnimFlagsBase.SCALE in flags else (1, 1, 1)
+        self.rotate = loader.read_vector4f() if BoneAnimFlagsBase.ROTATE in flags else (1, 0, 0, 0)
         padding = 0
-        self.translate = (loader.read_vector3f()
-                          if BoneAnimFlagsBase.TRANSLATE in flags
-                          else (0, 0, 0))
+        self.translate = loader.read_vector3f() if BoneAnimFlagsBase.TRANSLATE in flags else (0, 0, 0)

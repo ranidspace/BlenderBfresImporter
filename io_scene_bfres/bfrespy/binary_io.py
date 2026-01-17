@@ -1,4 +1,5 @@
-""" Code referenced from Syroot/io_scene_bfres licensed unfer MIT"""
+"""Code referenced from Syroot/io_scene_bfres licensed unfer MIT"""
+
 from __future__ import annotations
 import io
 import struct
@@ -8,15 +9,12 @@ import numpy
 class BinaryReader:
     """A wrapper to read binary data as other formats"""
 
-    def __init__(
-            self,
-            stream: io.BytesIO | io.BufferedReader,
-            leave_open=False):
+    def __init__(self, stream: io.BytesIO | io.BufferedReader, leave_open=False):
         self.endianness: str
         self.leave_open = leave_open
         self.stream = stream
 
-        if (type(stream) is bytes):
+        if type(stream) is bytes:
             stream = io.BytesIO(stream)
             return super().__init__(stream)
 
@@ -24,16 +22,16 @@ class BinaryReader:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if (self.leave_open is False):
+        if self.leave_open is False:
             self.stream.close()
         else:
             print("nothing happened")
             return
 
     def temporary_seek(self, offset=None, origin=None):
-        if (offset is None):
+        if offset is None:
             offset = 0
-        if (origin is None):
+        if origin is None:
             origin = io.SEEK_CUR
         return NewSeek(self, offset, origin)
 
@@ -48,7 +46,7 @@ class BinaryReader:
 
     def read_null_string(self, encoding=None) -> str:
         # Mostly the same as ascii i dont think there's harm in setting this?
-        encoding = encoding if encoding is not None else 'utf-8'
+        encoding = encoding if encoding is not None else "utf-8"
         text = bytearray()
         i = self.stream.read(1)
         while i[0] != 0:
@@ -66,83 +64,65 @@ class BinaryReader:
         return self.stream.read(count)
 
     def read_uint16(self) -> int:
-        return struct.unpack(self.endianness + 'H',
-                             self.stream.read(2))[0]
+        return struct.unpack(self.endianness + "H", self.stream.read(2))[0]
 
     def read_uint16s(self, count) -> tuple[int, ...]:
-        return struct.unpack(self.endianness + str(int(count)) + 'H',
-                             self.stream.read(2 * count))
+        return struct.unpack(self.endianness + str(int(count)) + "H", self.stream.read(2 * count))
 
     def read_uint32(self) -> int:
-        return struct.unpack(self.endianness + 'I',
-                             self.stream.read(4))[0]
+        return struct.unpack(self.endianness + "I", self.stream.read(4))[0]
 
     def read_uint32s(self, count) -> tuple[int, ...]:
-        return struct.unpack(self.endianness + str(int(count)) + 'I',
-                             self.stream.read(4 * count))
+        return struct.unpack(self.endianness + str(int(count)) + "I", self.stream.read(4 * count))
 
     def read_uint64(self) -> int:  # Switch has 64 bit offsets
-        return struct.unpack(self.endianness + 'Q',
-                             self.stream.read(8))[0]
+        return struct.unpack(self.endianness + "Q", self.stream.read(8))[0]
 
     def read_uint64s(self, count) -> tuple[int, ...]:
-        return struct.unpack(self.endianness + str(int(count)) + 'Q',
-                             self.stream.read(8 * count))
+        return struct.unpack(self.endianness + str(int(count)) + "Q", self.stream.read(8 * count))
 
     # Signed
 
     def read_int16(self) -> int:
-        return struct.unpack(self.endianness + 'h',
-                             self.stream.read(2))[0]
+        return struct.unpack(self.endianness + "h", self.stream.read(2))[0]
 
     def read_int16s(self, count) -> tuple[int, ...]:
-        return struct.unpack(self.endianness + str(int(count)) + 'h',
-                             self.stream.read(2 * count))
+        return struct.unpack(self.endianness + str(int(count)) + "h", self.stream.read(2 * count))
 
     def read_int32(self) -> int:
-        return struct.unpack(self.endianness + 'i',
-                             self.stream.read(4))[0]
+        return struct.unpack(self.endianness + "i", self.stream.read(4))[0]
 
     def read_int32s(self, count) -> tuple[int, ...]:
-        return struct.unpack(self.endianness + str(int(count)) + 'i',
-                             self.stream.read(4 * count))
+        return struct.unpack(self.endianness + str(int(count)) + "i", self.stream.read(4 * count))
 
     def read_int64(self) -> int:
-        return struct.unpack(self.endianness + 'q',
-                             self.stream.read(8))[0]
+        return struct.unpack(self.endianness + "q", self.stream.read(8))[0]
 
     def read_int64s(self, count) -> tuple[int, ...]:
-        return struct.unpack(self.endianness + str(int(count)) + 'q',
-                             self.stream.read(8 * count))
+        return struct.unpack(self.endianness + str(int(count)) + "q", self.stream.read(8 * count))
 
     def read_sbyte(self) -> int:
-        return struct.unpack(self.endianness + 'b',
-                             self.stream.read(1))[0]
+        return struct.unpack(self.endianness + "b", self.stream.read(1))[0]
 
     def read_sbytes(self, count) -> tuple[int, ...]:
-        return struct.unpack(self.endianness + str(int(count)) + 'b',
-                             self.stream.read(1 * count))
+        return struct.unpack(self.endianness + str(int(count)) + "b", self.stream.read(1 * count))
 
     # Other Formats
 
     def read_bool(self) -> bool:
-        return bool(struct.unpack(self.endianness + '?',
-                                  self.stream.read(1))[0])
+        return bool(struct.unpack(self.endianness + "?", self.stream.read(1))[0])
 
     def read_bools(self, count) -> tuple[bool, ...]:
-        return struct.unpack(self.endianness + str(int(count)) + '?',
-                             self.stream.read(count))
+        return struct.unpack(self.endianness + str(int(count)) + "?", self.stream.read(count))
 
     def read_single(self) -> float:
-        return struct.unpack(self.endianness + 'f',
-                             self.stream.read(4))[0]
+        return struct.unpack(self.endianness + "f", self.stream.read(4))[0]
 
     def read_singles(self, count) -> tuple[float, ...]:
-        return struct.unpack(self.endianness + str(int(count)) + 'f',
-                             self.stream.read(4 * count))
+        return struct.unpack(self.endianness + str(int(count)) + "f", self.stream.read(4 * count))
 
     def read_raw_string(self, length, encoding=None) -> str:
-        encoding = encoding if encoding is not None else 'utf-8'
+        encoding = encoding if encoding is not None else "utf-8"
         return self.stream.read(length).decode(encoding)
 
     def read_matrix_3x4(self) -> numpy.ndarray:
@@ -163,14 +143,14 @@ class BinaryReader:
         return (self.read_single(), self.read_single(), self.read_single())
 
     def read_vector4f(self) -> tuple[float, float, float, float]:
-        return (self.read_single(), self.read_single(),
-                self.read_single(), self.read_single())
+        return (self.read_single(), self.read_single(), self.read_single(), self.read_single())
 
     def read_bounding(self):
         """Reads a Bounding instance from the current stream
         and returns it.
         """
         from .models.shape import Bounding
+
         return Bounding(self.read_vector3f(), self.read_vector3f())
 
     def read_boundings(self, count):
@@ -184,6 +164,7 @@ class BinaryReader:
 
     def read_decimal10x5(self):
         from .common import Decimal10x5
+
         return Decimal10x5(self.read_uint16(), raw=True)
 
 
@@ -199,7 +180,7 @@ class NewSeek:
         self.prev_pos = reader.tell()
 
     def __enter__(self):
-        if (self.offset is not None):
+        if self.offset is not None:
             self.reader.seek(self.offset, self.whence)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
@@ -209,7 +190,7 @@ class NewSeek:
 class BinaryWriter:
     def __init__(self, raw):
         self.raw = raw
-        self.endianness = '<'  # Little-endian
+        self.endianness = "<"  # Little-endian
 
     def __enter__(self):
         self.writer = io.BufferedWriter(self.raw)
@@ -233,58 +214,47 @@ class BinaryWriter:
     def tell(self):
         return self.writer.tell()
 
-    def write_0_string(self, value, encoding='ascii'):
+    def write_0_string(self, value, encoding="ascii"):
         self.write_raw_string(value, encoding)
         self.write_byte(0)
 
     def write_byte(self, value):
-        self.writer.write(struct.pack('B',
-                                      value))
+        self.writer.write(struct.pack("B", value))
 
     def write_bytes(self, value):
         self.writer.write(value)
 
     def write_int32(self, value):
-        self.writer.write(struct.pack(self.endianness + 'i',
-                                      value))
+        self.writer.write(struct.pack(self.endianness + "i", value))
 
     def write_int32s(self, value):
-        self.writer.write(struct.pack(self.endianness + str(len(value)) + 'i',
-                                      *value))
+        self.writer.write(struct.pack(self.endianness + str(len(value)) + "i", *value))
 
     def write_sbyte(self, value):
-        self.writer.write(struct.pack(self.endianness + 'b',
-                                      value))
+        self.writer.write(struct.pack(self.endianness + "b", value))
 
     def write_sbytes(self, value):
-        self.writer.write(struct.pack(self.endianness + str(len(value)) + 'b',
-                                      *value))
+        self.writer.write(struct.pack(self.endianness + str(len(value)) + "b", *value))
 
     def write_single(self, value):
-        self.writer.write(struct.pack(self.endianness + 'f',
-                                      value))
+        self.writer.write(struct.pack(self.endianness + "f", value))
 
     def write_singles(self, value):
-        self.writer.write(struct.pack(self.endianness + str(len(value)) + 'f',
-                                      *value))
+        self.writer.write(struct.pack(self.endianness + str(len(value)) + "f", *value))
 
     def write_uint16(self, value):
-        self.writer.write(struct.pack(self.endianness + 'H',
-                                      value))
+        self.writer.write(struct.pack(self.endianness + "H", value))
 
     def write_uint16s(self, value):
-        self.writer.write(struct.pack(self.endianness + str(len(value)) + 'H',
-                                      *value))
+        self.writer.write(struct.pack(self.endianness + str(len(value)) + "H", *value))
 
     def write_uint32(self, value):
-        self.writer.write(struct.pack(self.endianness + 'I',
-                                      value))
+        self.writer.write(struct.pack(self.endianness + "I", value))
 
     def write_uint32s(self, value):
-        self.writer.write(struct.pack(self.endianness + str(len(value)) + 'I',
-                                      *value))
+        self.writer.write(struct.pack(self.endianness + str(len(value)) + "I", *value))
 
-    def write_raw_string(self, value, encoding='ascii'):
+    def write_raw_string(self, value, encoding="ascii"):
         self.writer.write(bytearray(value, encoding))
 
 

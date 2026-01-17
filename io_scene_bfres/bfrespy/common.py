@@ -9,16 +9,17 @@ from enum import IntEnum, IntFlag
 
 from . import core, texture
 
-T = TypeVar('T', bound=core.ResData)
+T = TypeVar("T", bound=core.ResData)
 
 stringcache: dict[int, str] = {}
 
 
 class Decimal10x5:
-    """Represents a 16-bit fixed-point decimal consisting of 1 sign bit, 10 
-    integer bits and 5 fractional bits (denoted as Q10.5). Note that the 
+    """Represents a 16-bit fixed-point decimal consisting of 1 sign bit, 10
+    integer bits and 5 fractional bits (denoted as Q10.5). Note that the
     implementation is not reporting over- and underflowing errors.
     """
+
     _M = 10
     """Number of integral part bits."""
     _N = 5
@@ -26,7 +27,7 @@ class Decimal10x5:
 
     def __init__(self, value: int | float, raw=False):
         # Raw reads a Decimal10x5 by it's raw bit represetation
-        if (not raw):
+        if not raw:
             if type(value) is int:
                 Decimal10x5(value << self._N, raw=True)
             elif type(value) is float:
@@ -54,7 +55,7 @@ class Decimal10x5:
         return self
 
     def __eq__(self, value: object) -> bool:
-        if (type(value) is not Decimal10x5):
+        if type(value) is not Decimal10x5:
             return False
         return self.raw == value.raw
 
@@ -74,9 +75,7 @@ class Decimal10x5:
         elif other is int:
             return Decimal10x5(self.raw * other, raw=True)
         else:
-            raise TypeError(
-                "Decimal10x5 can only be multiplied by int or itself"
-            )
+            raise TypeError("Decimal10x5 can only be multiplied by int or itself")
 
     def __truediv__(self, other: int | Decimal10x5):
         if type(other) is Decimal10x5:
@@ -84,12 +83,10 @@ class Decimal10x5:
         elif other is int:
             return Decimal10x5(self.raw // other, raw=True)
         else:
-            raise TypeError(
-                "Decimal10x5 can only be divided by int or itself"
-            )
+            raise TypeError("Decimal10x5 can only be divided by int or itself")
 
     def __floordiv__(self, other: int | Decimal10x5):
-        return (self / other)  # defined by truediv
+        return self / other  # defined by truediv
 
     def __int__(self):
         k = 1 << (self._N - 1)
@@ -100,12 +97,13 @@ class Decimal10x5:
 
 
 class AnimCurve(core.ResData):
-    """Represents an animation curve used by several sections to control 
+    """Represents an animation curve used by several sections to control
     different parameters over time.
     """
-    _FLAGS_MASK_FRAME_TYPE = 0B00000000_00000011
-    _FLAGS_MASK_KEY_TYPE = 0B00000000_00001100
-    _FLAGS_MASK_CURVE_TYPE = 0B00000000_01110000
+
+    _FLAGS_MASK_FRAME_TYPE = 0b00000000_00000011
+    _FLAGS_MASK_KEY_TYPE = 0b00000000_00001100
+    _FLAGS_MASK_CURVE_TYPE = 0b00000000_01110000
 
     def __init__(self):
         self._flags = 0
@@ -143,7 +141,7 @@ class AnimCurve(core.ResData):
 
     @property
     def key_type(self) -> AnimCurveKeyType:
-        """ The data type in which Keys are loaded and saved.
+        """The data type in which Keys are loaded and saved.
         The class always stores frames as converted Single Instances.
         """
         return AnimCurveKeyType(self._flags & self._FLAGS_MASK_KEY_TYPE)
@@ -183,7 +181,7 @@ class AnimCurve(core.ResData):
 
     @property
     def elements_per_key(self) -> int:
-        match (self.curve_type):
+        match self.curve_type:
             case AnimCurveType.CUBIC:
                 return 4
             case AnimCurveType.LINEAR:
@@ -195,7 +193,7 @@ class AnimCurve(core.ResData):
         frame_array_offs = 0
         key_array_offs = 0
         num_key = 0
-        if (loader.is_switch):
+        if loader.is_switch:
             frame_array_offs = loader.read_offset()
             key_array_offs = loader.read_offset()
             self._flags = loader.read_uint16()
@@ -221,7 +219,7 @@ class AnimCurve(core.ResData):
             key_array_offs = loader.read_offset()
 
         def loadframes():
-            match (self.frame_type):
+            match self.frame_type:
                 case AnimCurveFrameType.SINGLE:
                     return loader.read_singles(num_key)
                 case AnimCurveFrameType.DECIMAL_10X5:
@@ -232,19 +230,17 @@ class AnimCurve(core.ResData):
                 case AnimCurveFrameType.BYTE:
                     return loader.read_bytes(num_key)  # maybe
                 case _:
-                    raise TypeError(
-                        f"Invalid FrameType {self.frame_type.name}")
+                    raise TypeError(f"Invalid FrameType {self.frame_type.name}")
+
         self.frames = loader.load_custom(tuple, loadframes, frame_array_offs)
 
         def loadkeys():
             elements_per_key = self.elements_per_key
-            keys: list[tuple] = [
-                tuple() * elements_per_key for i in range(num_key)]
-            match (self.key_type):
+            keys: list[tuple] = [tuple() * elements_per_key for i in range(num_key)]
+            match self.key_type:
                 case AnimCurveKeyType.SINGLE:
                     for i in range(num_key):
-                        if (self.curve_type is AnimCurveType.STEP_INT or
-                                self.curve_type is AnimCurveType.STEP_BOOL):
+                        if self.curve_type is AnimCurveType.STEP_INT or self.curve_type is AnimCurveType.STEP_BOOL:
                             keys[i] = loader.read_uint32s(elements_per_key)
                         else:
                             keys[i] = loader.read_singles(elements_per_key)
@@ -257,21 +253,22 @@ class AnimCurve(core.ResData):
                 case _:
                     raise TypeError(f"Invalid KeyType {self.key_type.name}")
             return tuple(keys)  # only makes the outer list a tuple.
+
         self.keys = loader.load_custom(tuple, loadkeys, key_array_offs)
 
-        if (self.curve_type is AnimCurveType.STEP_BOOL):
+        if self.curve_type is AnimCurveType.STEP_BOOL:
             key_idx = 0
 
             self.key_step_bool_data = [False] * num_key
             for i in range(len(self.keys)):
-                if (num_key <= key_idx):
+                if num_key <= key_idx:
                     break
 
                 value = self.keys[i][0]
 
                 # Bit shift each key value
                 for j in range(32):
-                    if (num_key <= key_idx):
+                    if num_key <= key_idx:
                         break
 
                     set_ = bool((value & 0x01) != 0)
@@ -283,9 +280,10 @@ class AnimCurve(core.ResData):
 
 class AnimCurveFrameType(IntEnum):
     """Represents the possible data types in which AnimCurve.Frames are stored.
-    For simple library use, they are always converted them to and from 
+    For simple library use, they are always converted them to and from
     Single instances.
     """
+
     # 16 bit
     SINGLE = 0
     """The frames are stored as Single instances."""
@@ -299,9 +297,10 @@ class AnimCurveFrameType(IntEnum):
 
 class AnimCurveKeyType(IntFlag):
     """Represents the possible data types in which AnimCurve.Keys are stored.
-    For simple library use, they are always converted them to and from 
+    For simple library use, they are always converted them to and from
     Single instances.
     """
+
     # 16 bit
     SINGLE = 0 << 2
     """The keys are stored as Single instances."""
@@ -314,12 +313,13 @@ class AnimCurveKeyType(IntFlag):
 
 
 class AnimCurveType(IntFlag):
-    """Represents the type of key values stored by this curve. This also 
-    determines the number of required elements to define a key in the 
-    AnimCurve.Keys array. Use the AnimCurve.elements_per_key() method to 
+    """Represents the type of key values stored by this curve. This also
+    determines the number of required elements to define a key in the
+    AnimCurve.Keys array. Use the AnimCurve.elements_per_key() method to
     retrieve the number of elements required for the AnimCurve.curve_type
     of that curve.
     """
+
     CUBIC = 0 << 4
     """The curve uses cubic interpolation.
     4 elements of the AnimCurve.keys array form a key."""
@@ -354,6 +354,7 @@ class WrapMode(IntEnum):
 @dataclass
 class Srt2D:
     """Represents a 2D transformation."""
+
     scaling: tuple[float, float]
     rotation: float
     translation: tuple[float, float]
@@ -362,16 +363,13 @@ class Srt2D:
         return f"Srt2D[{self.scaling} {self.rotation} {self.translation}]"
 
     def __bool__(self):
-        return (
-            self.scaling != (1.0, 1.0)
-            or self.rotation != 0.0
-            or self.translation != (0.0, 0.0)
-        )
+        return self.scaling != (1.0, 1.0) or self.rotation != 0.0 or self.translation != (0.0, 0.0)
 
 
 @dataclass
 class Srt3D:
     """Represents a 3D transformation."""
+
     scaling: tuple[float, float, float]
     rotation: tuple[float, float, float]
     translation: tuple[float, float, float]
@@ -381,14 +379,14 @@ class Srt3D:
 
     def __bool__(self):
         return (
-            self.scaling != (1.0, 1.0, 1.0)
-            or self.rotation != (0.0, 0.0, 0.0)
-            or self.translation != (0.0, 0.0, 0.0)
+            self.scaling != (1.0, 1.0, 1.0) or self.rotation != (0.0, 0.0, 0.0) or self.translation != (0.0, 0.0, 0.0)
         )
+
 
 @dataclass
 class TexSrt:
     """Represents a 2D texture transformation."""
+
     mode: TexSrtMode
     scaling: tuple[float, float]
     rotation: float
@@ -398,11 +396,8 @@ class TexSrt:
         return f"TexSrt[{self.mode.name} {self.scaling} {self.rotation} {self.translation}]"
 
     def __bool__(self):
-        return (
-            self.scaling != (1.0, 1.0)
-            or self.rotation != 0.0
-            or self.translation != (0.0, 0.0)
-        )
+        return self.scaling != (1.0, 1.0) or self.rotation != 0.0 or self.translation != (0.0, 0.0)
+
 
 class TexSrtMode(IntEnum):
     MODE_MAYA = 0
@@ -424,7 +419,7 @@ class TextureRef(core.ResData):
 
 
 class Buffer(core.ResData):
-    """Represents a buffer of data uploaded to the GX2 GPU which can hold 
+    """Represents a buffer of data uploaded to the GX2 GPU which can hold
     arbitrary data.
     """
 
@@ -451,18 +446,19 @@ class Buffer(core.ResData):
             for i in range(num_buffering):
                 data.append(loader.read_bytes(size))
             return tuple(data)
+
         data = loader.load_custom(tuple, lambda: __loaddata())
 
 
 class ResString(core.ResData):
     """Represents a String which is stored in a ResFile"""
 
-    def __init__(self, value=None, encoding: str = ''):
-        if (value):
-            if (isinstance(value, str)):
+    def __init__(self, value=None, encoding: str = ""):
+        if value:
+            if isinstance(value, str):
                 self.encoding = encoding
                 self.string = value
-            elif (isinstance(value, ResString)):
+            elif isinstance(value, ResString):
                 self.string = value.string
                 self.encoding = value.encoding
         else:
@@ -473,10 +469,10 @@ class ResString(core.ResData):
         return self.string
 
     def __repr__(self) -> str:
-        return f'res\'{self.string}\''
+        return f"res'{self.string}'"
 
     def load(self, loader: core.ResFileLoader):
-        if (loader.is_switch):
+        if loader.is_switch:
             self.string = loader.load_string(self.encoding)
         else:
             self.string = loader.read_string(self.encoding)
@@ -492,7 +488,7 @@ class StringTable(core.ResData):
 
     def load(self, loader: core.ResFileLoader):
         self.strings.clear()
-        if (loader.is_switch):
+        if loader.is_switch:
             loader.seek(-0x14, io.SEEK_CUR)
             signature = loader.read_uint32()
             block_offs = loader.read_uint32()
@@ -534,24 +530,19 @@ class UserData(core.ResData):
             self.type = UserDataType.SINGLE
             self._value = value
         elif type(value[0]) is str:
-            self.type = (UserDataType.WString
-                         if as_unicode
-                         else UserDataType.STRING)
+            self.type = UserDataType.WString if as_unicode else UserDataType.STRING
             self._value = value
         else:
-            raise TypeError(
-                f"UserData recieved unsupported type {type(value).__name__}")
+            raise TypeError(f"UserData recieved unsupported type {type(value).__name__}")
 
     # there would be a "Bytes" here but signed bytes and int32 just use "int"
 
     def load(self, loader: core.ResFileLoader):
-        if (loader.is_switch):
+        if loader.is_switch:
             self.name = loader.load_string()
             data_offs = loader.read_offset()
             count = 0
-            if (loader.res_file.version_major2 <= 2
-                    and loader.res_file.version_major2 == 0):
-
+            if loader.res_file.version_major2 <= 2 and loader.res_file.version_major2 == 0:
                 reserved = loader.read_raw_string(8)
                 count = loader.read_uint32()
                 self.type = UserDataType(loader.read_uint32())
@@ -562,27 +553,15 @@ class UserData(core.ResData):
 
             match self.type:
                 case UserDataType.BYTE:
-                    self._value = loader.load_custom(
-                        tuple, lambda: loader.read_sbytes(count), data_offs
-                    )
+                    self._value = loader.load_custom(tuple, lambda: loader.read_sbytes(count), data_offs)
                 case UserDataType.INT32:
-                    self._value = loader.load_custom(
-                        tuple, lambda: loader.read_int32s(count), data_offs
-                    )
+                    self._value = loader.load_custom(tuple, lambda: loader.read_int32s(count), data_offs)
                 case UserDataType.SINGLE:
-                    self._value = loader.load_custom(
-                        tuple, lambda: loader.read_singles(count), data_offs
-                    )
+                    self._value = loader.load_custom(tuple, lambda: loader.read_singles(count), data_offs)
                 case UserDataType.STRING:
-                    self._value = loader.load_custom(
-                        tuple, lambda: loader.load_strings(count, "utf-8"),
-                        data_offs
-                    )
+                    self._value = loader.load_custom(tuple, lambda: loader.load_strings(count, "utf-8"), data_offs)
                 case UserDataType.WString:
-                    self._value = loader.load_custom(
-                        tuple, lambda: loader.load_strings(count, "utf-16"),
-                        data_offs
-                    )
+                    self._value = loader.load_custom(tuple, lambda: loader.load_strings(count, "utf-16"), data_offs)
         else:
             self.name = loader.load_string()
             count = loader.read_uint16()
@@ -602,9 +581,10 @@ class UserData(core.ResData):
 
 
 class UserDataType(IntEnum):
-    """Represents the possible data types of values stored in UserData 
+    """Represents the possible data types of values stored in UserData
     instances.
     """
+
     INT32 = 0
     """The values are an Int32 array"""
     SINGLE = 1
@@ -619,6 +599,7 @@ class UserDataType(IntEnum):
 
 class Node(Generic[T]):
     """Represents a node forming the Patricia trie of the dictionary."""
+
     size_in_bytes = 16
 
     def __init__(self, key=None, value=None):
@@ -627,13 +608,13 @@ class Node(Generic[T]):
         self.idx_right: int
         self.key: str
         self.value: T
-        if (key):
+        if key:
             self.key = key
-        if (value):
+        if value:
             self.value = value
 
     def __bool__(self):
-        if (hasattr(self, 'key')):
+        if hasattr(self, "key"):
             return True
         return False
 
@@ -647,7 +628,7 @@ class ResDict(core.ResData, Collection[Node[T]]):
     """
 
     def __init__(self):
-        self._nodes: list[Node[T]] = [Node('')]
+        self._nodes: list[Node[T]] = [Node("")]
 
     def __len__(self):
         return len(self._nodes) - 1
@@ -656,15 +637,11 @@ class ResDict(core.ResData, Collection[Node[T]]):
         return iter(self._nodes[1:])
 
     def __repr__(self):
-        return (
-            'ResDict{'
-            + ', '.join([f'{key}: {value}'for key, value in self.items()])
-            + '}'
-        )
+        return "ResDict{" + ", ".join([f"{key}: {value}" for key, value in self.items()]) + "}"
 
     def __contains__(self, x: object) -> bool:
         node, index = self.__lookup(x, False)
-        if (node):
+        if node:
             return True
         else:
             return False
@@ -672,38 +649,36 @@ class ResDict(core.ResData, Collection[Node[T]]):
     # Operators
 
     @overload
-    def __getitem__(self, key: int | str) -> T:
-        ...
+    def __getitem__(self, key: int | str) -> T: ...
 
     @overload
-    def __getitem__(self, key: type[core.ResData]) -> str:
-        ...
+    def __getitem__(self, key: type[core.ResData]) -> str: ...
 
     def __getitem__(self, key):
-        if (isinstance(key, int | str)):
+        if isinstance(key, int | str):
             node, index = self.__lookup(key)
             return node.value
 
-        if (isinstance(key, core.ResData)):
+        if isinstance(key, core.ResData):
             node, index = self.__lookup(key)
             return node.key
 
     def __setitem__(self, key, value: T):
-        if (isinstance(key, int)):
+        if isinstance(key, int):
             node, index = self.__lookup(key)
             node.value = value
 
-        if (isinstance(key, str)):
+        if isinstance(key, str):
             node, index = self.__lookup(key, False)
-            if (node):
+            if node:
                 node.value = value
             else:
                 self._nodes.append(Node(key, value))
 
-        if (isinstance(key, core.ResData)):
+        if isinstance(key, core.ResData):
             self.__lookup(key)
             node, index = self.__lookup(value)
-            if (node):
+            if node:
                 raise ValueError(f"Key {value} already exists.")
 
     # Properties
@@ -727,21 +702,21 @@ class ResDict(core.ResData, Collection[Node[T]]):
     def clear(self):
         """Removes all elements from the dictionary"""
         self._nodes.clear()
-        self._nodes.append(Node(key=''))
+        self._nodes.append(Node(key=""))
 
     def contains_key(self, key):
         """Determines whether an instance is saved
         under the given key in the dictionary.
         """
         node, index = self.__lookup(key, False)
-        if (node):
+        if node:
             return True
         return False
 
     def get_key(self, index: int):
         """Returns they key of a given index"""
         node, idx = self.__lookup(index, True)  # XXX Shouldn't this be false?
-        if (node):
+        if node:
             return node.key
         return ""
 
@@ -750,7 +725,7 @@ class ResDict(core.ResData, Collection[Node[T]]):
         index of the first occurrence within the entire dictionary.
         """
         node, index = self.__lookup(key, False)
-        return (index if node else -1)
+        return index if node else -1
 
     def rename(self, key, new_key):
         """Changes the key of the instance currently saved under the
@@ -760,7 +735,7 @@ class ResDict(core.ResData, Collection[Node[T]]):
         node, index = self.__lookup(key)
         # Throw if new key already exists
         existingnode, index = self.__lookup(key, False)
-        if (existingnode):
+        if existingnode:
             raise ValueError(f'Key "{new_key}" already exists.')
 
     def remove_key(self, key):
@@ -768,7 +743,7 @@ class ResDict(core.ResData, Collection[Node[T]]):
         specific key from the dictionary.
         """
         node, index = self.__lookup(key, False)
-        if (node):
+        if node:
             self._nodes.remove(node)
             return True
         else:
@@ -781,7 +756,7 @@ class ResDict(core.ResData, Collection[Node[T]]):
 
     def try_get_value(self, key):
         node, index = self.__lookup(key, False)
-        if (node):
+        if node:
             return node.value
         else:
             return None
@@ -791,7 +766,7 @@ class ResDict(core.ResData, Collection[Node[T]]):
     def append(self, key, value):
         """Adds the given value under the specified key."""
         node, index = self.__lookup(key, False)
-        if (node):
+        if node:
             raise ValueError(f'Key "{key}" already exists.')
         self._nodes.append(Node(key, value))
 
@@ -799,7 +774,7 @@ class ResDict(core.ResData, Collection[Node[T]]):
         """Searches for the specified value and returns the zero-based
         index of the first occurrence within the entire dictionary."""
         node, index = self.__lookup(value, False)
-        if (node):
+        if node:
             return index
         else:
             return -1
@@ -808,15 +783,14 @@ class ResDict(core.ResData, Collection[Node[T]]):
         """Removes the first occurrence of a specific value
         from the dictionary."""
         node, index = self.__lookup(value, False)
-        if (node):
+        if node:
             self._nodes.remove(node)
             return True
         else:
             return False
 
     def to_dict(self) -> dict[str, T]:
-        """Copies the elements of the dictionary to a python dict
-        """
+        """Copies the elements of the dictionary to a python dict"""
         res_data = {}
         for i, node in enumerate(self):
             res_data[node.key] = node.value
@@ -827,7 +801,7 @@ class ResDict(core.ResData, Collection[Node[T]]):
         assigned to key, or None if no key was found.
         """
         node, index = self.__lookup(value, False)
-        if (node):
+        if node:
             return node.key
         else:
             return None
@@ -841,7 +815,7 @@ class ResDict(core.ResData, Collection[Node[T]]):
         i = 0
         # Read the nodes including the root node.
         nodes = []
-        while (num_nodes >= 0):
+        while num_nodes >= 0:
             nodes.append(self.__read_node(T, loader))
             i += 1  # XXX What does i do here?
             num_nodes -= 1
@@ -862,31 +836,31 @@ class ResDict(core.ResData, Collection[Node[T]]):
         node.idx_left = loader.read_uint16()
         node.idx_right = loader.read_uint16()
         node.key = loader.load_string()
-        if (not loader.is_switch):
+        if not loader.is_switch:
             node.value = self._load_node_value(T, loader)
         return node
 
     @singledispatchmethod
     def __lookup(self, value, throwonfail=True):
         for i, found_node in enumerate(self):
-            if (found_node.value == value):
+            if found_node.value == value:
                 return (found_node, i)
-        if (throwonfail):
+        if throwonfail:
             raise ValueError("{key} not found in {this}.")
         return (Node(), -1)
 
     @__lookup.register
     def _(self, value: ResString, throwonfail=True):
         for i, found_node in enumerate(self):
-            if (isinstance(found_node.value, ResString)):
-                if (str(found_node.value) == str(value)):
+            if isinstance(found_node.value, ResString):
+                if str(found_node.value) == str(value):
                     return (found_node, i)
         return (Node(), -1)
 
     @__lookup.register
     def _(self, key: int, throwonfail=True):
-        if (key < 0 or key > len(self._nodes)):
-            if (throwonfail):
+        if key < 0 or key > len(self._nodes):
+            if throwonfail:
                 raise IndexError(f"{key} out of bounds in {self}.")
             return (Node(), -1)
         node = self._nodes[key + 1]
@@ -895,9 +869,8 @@ class ResDict(core.ResData, Collection[Node[T]]):
     @__lookup.register
     def _(self, key: str, throwonfail=True):
         for i, found_node in enumerate(self):
-            if (found_node.key == key):
+            if found_node.key == key:
                 return (found_node, i)
-        if (throwonfail):
+        if throwonfail:
             raise ValueError("{key} not found in {this}.")
         return (Node(), -1)
-

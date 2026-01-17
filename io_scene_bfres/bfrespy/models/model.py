@@ -8,9 +8,10 @@ from .material import Material
 
 
 class Model(ResData):
-    """Represents an FMDL subfile in a ResFile, storing model vertex data, 
+    """Represents an FMDL subfile in a ResFile, storing model vertex data,
     skeletons and used materials.
     """
+
     _SIGNATURE = "FMDL"
 
     def __init__(self):
@@ -37,8 +38,9 @@ class Model(ResData):
 
     def load(self, loader: ResFileLoader):
         loader._check_signature(self._SIGNATURE)
-        if (loader.is_switch):
+        if loader.is_switch:
             from ..switch.model import ModelParser
+
             ModelParser.read(loader, self)
         else:
             self.name = loader.load_string()
@@ -54,8 +56,10 @@ class Model(ResData):
             num_userdata = loader.read_uint16()
             total_vtx_count = loader.read_uint32()
 
-            if (loader.res_file.version >= 0x03030000):
+            if loader.res_file.version >= 0x03030000:
                 user_pointer = loader.read_uint32()
             self.vtx_buffers = loader.load_list(
-                VertexBuffer, num_vtx_buffer, ofs_vtx_buffer_list,
+                VertexBuffer,
+                num_vtx_buffer,
+                ofs_vtx_buffer_list,
             )

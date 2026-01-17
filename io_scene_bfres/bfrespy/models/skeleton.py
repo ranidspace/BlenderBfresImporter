@@ -4,15 +4,15 @@ from ..common import ResDict, UserData
 
 
 class Bone(ResData):
-    """Represents a single bone in a Skeleton section, storing its initial 
+    """Represents a single bone in a Skeleton section, storing its initial
     transform and transformation effects.
     """
 
-    _FLAGS_MASK = 0B00000000_00000000_00000000_00000001
-    _FLAGS_MASK_ROTATE = 0B00000000_00000000_01110000_00000000
-    _FLAGS_MASK_BILLBOARD = 0B00000000_00000111_00000000_00000000
-    _FLAGS_MASK_TRANSFORM = 0B00001111_00000000_00000000_00000000
-    _FLAGS_MASK_TRANSFORM_CUMULATIVE = 0B11110000_00000000_00000000_00000000
+    _FLAGS_MASK = 0b00000000_00000000_00000000_00000001
+    _FLAGS_MASK_ROTATE = 0b00000000_00000000_01110000_00000000
+    _FLAGS_MASK_BILLBOARD = 0b00000000_00000111_00000000_00000000
+    _FLAGS_MASK_TRANSFORM = 0b00001111_00000000_00000000_00000000
+    _FLAGS_MASK_TRANSFORM_CUMULATIVE = 0b11110000_00000000_00000000_00000000
 
     def __init__(self):
         _flags = 0
@@ -44,7 +44,7 @@ class Bone(ResData):
 
     @visible.setter
     def visible(self, value):
-        if (value):
+        if value:
             self.flags |= BoneFlags.VISIBLE
         else:
             self.flags &= BoneFlags.VISIBLE
@@ -83,8 +83,7 @@ class Bone(ResData):
 
     @property
     def bone_flags_transform_cumulative(self):
-        return BoneFlagsTransformCumulative(
-            self._flags & self._FLAGS_MASK_TRANSFORM_CUMULATIVE)
+        return BoneFlagsTransformCumulative(self._flags & self._FLAGS_MASK_TRANSFORM_CUMULATIVE)
 
     @bone_flags_transform_cumulative.setter
     def bone_flags_transform_cumulative(self, value):
@@ -97,14 +96,13 @@ class Bone(ResData):
     # Methods
 
     def load(self, loader: ResFileLoader):
-        if (loader.is_switch):
+        if loader.is_switch:
             self.name = loader.load_string()
             self.userdata = loader.load_dict_values(UserData)
-            if (loader.res_file.version_major2 > 9):
+            if loader.res_file.version_major2 > 9:
                 loader.seek(8)
 
-            if (loader.res_file.version_major2 == 8
-                    or loader.res_file.version_major2 == 9):
+            if loader.res_file.version_major2 == 8 or loader.res_file.version_major2 == 9:
                 loader.seek(16)
 
             idx = loader.read_int16()
@@ -131,7 +129,7 @@ class Bone(ResData):
             self.position = loader.read_vector3f()
             self.userdata = loader.load_dict(UserData)
 
-            if (loader.res_file.version < 0x03040000):
+            if loader.res_file.version < 0x03040000:
                 self.inverse_mtx = loader.read_matrix_3x4()
 
 
@@ -211,6 +209,7 @@ class BoneFlagsTransformCumulative(IntFlag):
 
 class Skeleton(ResData):
     """Represents an FSKL section in a Model subfile, storing armature data."""
+
     _SIGNATURE = "FSKL"
     _FLAGS_SCALING_MASK = 0b00000000_00000000_00000011_00000000
     _FLAGS_ROTATION_MASK = 0b00000000_00000000_01110000_00000000
@@ -255,14 +254,14 @@ class Skeleton(ResData):
     def get_smooth_idxs(self):
         idxs = []
         for bone in self.bones.values():
-            if (bone.smooth_mtx_idx != 1):
+            if bone.smooth_mtx_idx != 1:
                 idxs.append(bone.smooth_mtx_idx)
         return idxs
 
     def get_rigid_idxs(self):
         idxs = []
         for bone in self.bones.values():
-            if (bone.rigid_mtx_idx != 1):
+            if bone.rigid_mtx_idx != 1:
                 idxs.append(bone.rigid_mtx_idx)
         return idxs
 
@@ -270,8 +269,8 @@ class Skeleton(ResData):
 
     def load(self, loader: ResFileLoader):
         loader._check_signature(self._SIGNATURE)
-        if (loader.is_switch):
-            if (loader.res_file.version_major2 >= 9):
+        if loader.is_switch:
+            if loader.res_file.version_major2 >= 9:
                 self._flags = loader.read_uint32()
             else:
                 offset = loader.read_uint32()
@@ -279,41 +278,30 @@ class Skeleton(ResData):
 
             bone_dict_offs = loader.read_offset()
             bone_array_offs = loader.read_offset()
-            self.bones = loader.load_dict_values(
-                Bone, bone_dict_offs, bone_array_offs
-            )
+            self.bones = loader.load_dict_values(Bone, bone_dict_offs, bone_array_offs)
             mtx_to_bone_list_offs = loader.read_offset()
             inverse_model_mtx_offs = loader.read_offset()
 
-            if (loader.res_file.version_major2 == 8):
+            if loader.res_file.version_major2 == 8:
                 loader.seek(16)
-            if (loader.res_file.version_major2 >= 9):
+            if loader.res_file.version_major2 >= 9:
                 loader.seek(8)
 
             user_pointer = loader.read_int64()
-            if (loader.res_file.version_major2 < 9):
+            if loader.res_file.version_major2 < 9:
                 self._flags = loader.read_uint32()
             num_bone = loader.read_uint16()
             self.num_smooth_mtxs = loader.read_uint16()
             self.num_rigid_mtxs = loader.read_uint16()
             loader.seek(6)
 
-            self.user_idxs = loader.load_custom(
-                tuple, lambda: loader.read_uint16s(num_bone), user_pointer
-            )
+            self.user_idxs = loader.load_custom(tuple, lambda: loader.read_uint16s(num_bone), user_pointer)
 
-            self.mtx_to_bone_list = (
-                loader.load_custom(
-                    list, lambda: loader.read_uint16s(
-                        self.num_smooth_mtxs + self.num_rigid_mtxs),
-                    mtx_to_bone_list_offs)
+            self.mtx_to_bone_list = loader.load_custom(
+                list, lambda: loader.read_uint16s(self.num_smooth_mtxs + self.num_rigid_mtxs), mtx_to_bone_list_offs
             )
-            self.inverse_model_mtxs = (
-                loader.load_custom(
-                    list, lambda: loader.read_matrix_3x4s(
-                        self.num_smooth_mtxs),
-                    inverse_model_mtx_offs
-                )
+            self.inverse_model_mtxs = loader.load_custom(
+                list, lambda: loader.read_matrix_3x4s(self.num_smooth_mtxs), inverse_model_mtx_offs
             )
 
 

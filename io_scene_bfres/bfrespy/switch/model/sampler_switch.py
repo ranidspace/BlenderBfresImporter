@@ -28,40 +28,31 @@ class SamplerSwitch(core.ResData):
         """The texture filtering on the X and Y axes when the texture is drawn
         smaller than the actual texture's resolution.
         """
-        return self.ShrinkFilterModes(self.__filter_flags
-                                      & self.__FLAGS_SHRINK_MASK)
+        return self.ShrinkFilterModes(self.__filter_flags & self.__FLAGS_SHRINK_MASK)
 
     @shrink_xy.setter
     def shrink_xy(self, value):
-        self.__filter_flags = (self.__filter_flags
-                               & ~self.__FLAGS_SHRINK_MASK
-                               | int(value))
+        self.__filter_flags = self.__filter_flags & ~self.__FLAGS_SHRINK_MASK | int(value)
 
     @property
     def expand_xy(self):
         """The texture filtering on the X and Y axes when the texture is drawn
         larger than the actual texture's resolution.
         """
-        return self.ExpandFilterModes(self.__filter_flags
-                                      & self.__FLAGS_EXPAND_MASK)
+        return self.ExpandFilterModes(self.__filter_flags & self.__FLAGS_EXPAND_MASK)
 
     @expand_xy.setter
     def expand_xy(self, value):
-        self.__filter_flags = (self.__filter_flags
-                               & ~self.__FLAGS_EXPAND_MASK
-                               | int(value))
+        self.__filter_flags = self.__filter_flags & ~self.__FLAGS_EXPAND_MASK | int(value)
 
     @property
     def mipmap(self):
         """The texture filtering for mipmaps."""
-        return self.MipFilterModes(self.__filter_flags
-                                   & self.__FLAGS_MIPMAP_MASK)
+        return self.MipFilterModes(self.__filter_flags & self.__FLAGS_MIPMAP_MASK)
 
     @mipmap.setter
     def mipmap(self, value):
-        self.__filter_flags = (self.__filter_flags
-                               & ~self.__FLAGS_MIPMAP_MASK
-                               | int(value))
+        self.__filter_flags = self.__filter_flags & ~self.__FLAGS_MIPMAP_MASK | int(value)
 
     # Methods
 
@@ -69,24 +60,24 @@ class SamplerSwitch(core.ResData):
         sampler = models.TexSampler()
         sampler.__filter_flags = self.__filter_flags
 
-        if (self.wrapmode_u in self.clamp_modes):
+        if self.wrapmode_u in self.clamp_modes:
             sampler.clamp_x = self.clamp_modes[self.wrapmode_u]
-        if (self.wrapmode_v in self.clamp_modes):
+        if self.wrapmode_v in self.clamp_modes:
             sampler.clamp_y = self.clamp_modes[self.wrapmode_v]
-        if (self.wrapmode_w in self.clamp_modes):
+        if self.wrapmode_w in self.clamp_modes:
             sampler.clamp_z = self.clamp_modes[self.wrapmode_w]
-        if (self.anisotropic in self.anisotropic_modes):
+        if self.anisotropic in self.anisotropic_modes:
             sampler.max_anisotropic_ratio = self.anisotropic_modes[self.anisotropic]
-        if (self.compare_func in self.compare_modes):
+        if self.compare_func in self.compare_modes:
             sampler.depth_compare_func = self.compare_modes[self.compare_func]
-        if (self.border_color_type in self.border_modes):
+        if self.border_color_type in self.border_modes:
             sampler.border_type = self.border_modes[self.border_color_type]
 
-        if (self.mipmap in self.mip_filters):
+        if self.mipmap in self.mip_filters:
             sampler.mip_filter = self.mip_filters[self.mipmap]
-        if (self.expand_xy in self.expand_filters):
+        if self.expand_xy in self.expand_filters:
             sampler.mag_filter = self.expand_filters[self.expand_xy]
-        if (self.shrink_xy in self.shrink_filters):
+        if self.shrink_xy in self.shrink_filters:
             sampler.min_filter = self.shrink_filters[self.shrink_xy]
 
         sampler.max_lod = self.max_lod
@@ -134,6 +125,7 @@ class SamplerSwitch(core.ResData):
 
     class CompareFunction(IntEnum):
         """Represents compare functions used for depth and stencil tests."""
+
         # byte
         NEVER = 0
         LESS = 1
@@ -146,6 +138,7 @@ class SamplerSwitch(core.ResData):
 
     class TexBorderType(IntEnum):
         """Represents type of border color to use."""
+
         # byte
         WHITE = 0
         TRANSPARENT = 1
@@ -155,6 +148,7 @@ class SamplerSwitch(core.ResData):
         """Represents how to treat texture coordinates outside of the
         normalized coordinate texture range.
         """
+
         # sbyte
         REPEAT = 0
         MIRROR = 1

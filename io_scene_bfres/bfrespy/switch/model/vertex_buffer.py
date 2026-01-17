@@ -19,7 +19,6 @@ class VertexBufferStride(ResData):
 
 
 class VertexBufferSize(ResData):
-
     def __init__(self):
         self.size: int
         self.gpu_access_flags: int
@@ -36,7 +35,7 @@ class VertexBufferSize(ResData):
 class VertexBufferParser:
     @staticmethod
     def load(loader: ResFileSwitchLoader, vtx_buffer: VertexBuffer):
-        if (loader.res_file.version_major2 >= 9):
+        if loader.res_file.version_major2 >= 9:
             vtx_buffer.flags = loader.read_uint32()
         else:
             loader.load_header_block()
@@ -44,8 +43,7 @@ class VertexBufferParser:
         vtx_buffer.attributes = loader.load_dict_values(VertexAttrib)
         vtx_buffer.mempool = loader.load(MemoryPool)
         unk = loader.read_offset()
-        if (loader.res_file.version_major2 > 2
-                or loader.res_file.version_major > 0):
+        if loader.res_file.version_major2 > 2 or loader.res_file.version_major > 0:
             loader.read_offset()  # unk2
         vtx_buff_size_offs = loader.read_offset()
         vtx_stride_size_offs = loader.read_offset()
@@ -64,22 +62,16 @@ class VertexBufferParser:
         # To obtain a list of all the buffer data, it would be by the
         # index buffer offset + buff_offs.
 
-        stride_array = loader.load_list(
-            VertexBufferStride, num_buffer, vtx_stride_size_offs
-        )
-        vtx_buff_size_array = loader.load_list(
-            VertexBufferSize, num_buffer, vtx_buff_size_offs
-        )
+        stride_array = loader.load_list(VertexBufferStride, num_buffer, vtx_stride_size_offs)
+        vtx_buff_size_array = loader.load_list(VertexBufferSize, num_buffer, vtx_buff_size_offs)
 
         vtx_buffer.buffers = []
-        with (loader.temporary_seek(BufferInfo.buff_offs + buff_offs, io.SEEK_SET)):
+        with loader.temporary_seek(BufferInfo.buff_offs + buff_offs, io.SEEK_SET):
             for buff in range(num_buffer):
                 buffer = Buffer()
-                buffer.data = [b'']
+                buffer.data = [b""]
                 buffer.stride = stride_array[buff].stride
 
                 loader.align(8)
-                buffer.data[0] = loader.read_bytes(
-                    vtx_buff_size_array[buff].size
-                )
+                buffer.data[0] = loader.read_bytes(vtx_buff_size_array[buff].size)
                 vtx_buffer.buffers.append(buffer)

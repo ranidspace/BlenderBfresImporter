@@ -10,6 +10,7 @@ from . import VertexBuffer
 
 class Shape(ResData):
     """Represents an FSHP section in a Model subfile"""
+
     _SIGNATURE = "FSHP"
 
     def __init__(self):
@@ -36,7 +37,7 @@ class Shape(ResData):
 
     @has_vtx_buffer.setter
     def has_vtx_buffer(self, value):
-        if (value):
+        if value:
             self.flags |= ShapeFlags.HAS_VERTEX_BUFFER
         else:
             self.flags &= ShapeFlags.HAS_VERTEX_BUFFER
@@ -47,15 +48,16 @@ class Shape(ResData):
 
     @has_vtx_buffer.setter
     def has_vtx_buffer(self, value):
-        if (value):
+        if value:
             self.flags |= ShapeFlags.SUBMESH_BOUNDARY_CONSISTENT
         else:
             self.flags &= ShapeFlags.SUBMESH_BOUNDARY_CONSISTENT
 
     def load(self, loader: ResFileLoader):
         loader._check_signature(self._SIGNATURE)
-        if (loader.is_switch):
+        if loader.is_switch:
             from ..switch.model import ShapeParser
+
             ShapeParser.read(loader, self)
 
 
@@ -98,9 +100,8 @@ class Mesh(ResData):
         format_size = self.format_size
         for i in range(len(self.index_buffer.data)):
             buffering_size = len(self.index_buffer.data[i])
-            if (buffering_size % format_size != 0):
-                raise ValueError(
-                    f"Cannot form complete indices from {self.index_buffer}.")
+            if buffering_size % format_size != 0:
+                raise ValueError(f"Cannot form complete indices from {self.index_buffer}.")
             element_count += buffering_size / format_size
         return element_count
 
@@ -110,56 +111,46 @@ class Mesh(ResData):
 
     @property
     def format_size(self):
-        match (self.index_format):
-            case (GX2IndexFormat.UINT16
-                  | GX2IndexFormat.UINT16_LITTLE_ENDIAN):
+        match self.index_format:
+            case GX2IndexFormat.UINT16 | GX2IndexFormat.UINT16_LITTLE_ENDIAN:
                 return 2
-            case (GX2IndexFormat.UINT32
-                  | GX2IndexFormat.UINT32_LITTLE_ENDIAN):
+            case GX2IndexFormat.UINT32 | GX2IndexFormat.UINT32_LITTLE_ENDIAN:
                 return 4
             case _:
-                raise ValueError(f"Invalid GX2IndexFormat \
-                                 {self.index_format.name}.")
+                raise ValueError(
+                    f"Invalid GX2IndexFormat \
+                                 {self.index_format.name}."
+                )
 
     @property
     def format_byte_order(self):
-        match (self.index_format):
-            case (GX2IndexFormat.UINT16_LITTLE_ENDIAN
-                    | GX2IndexFormat.UINT32_LITTLE_ENDIAN):
-                return '<'
-            case (GX2IndexFormat.UINT16
-                    | GX2IndexFormat.UINT32):
-                return '>'
+        match self.index_format:
+            case GX2IndexFormat.UINT16_LITTLE_ENDIAN | GX2IndexFormat.UINT32_LITTLE_ENDIAN:
+                return "<"
+            case GX2IndexFormat.UINT16 | GX2IndexFormat.UINT32:
+                return ">"
             case _:
-                raise ValueError(
-                    f"Invalid GX2IndexFormat{self.index_format.name}."
-                )
+                raise ValueError(f"Invalid GX2IndexFormat{self.index_format.name}.")
 
     def load(self, loader: ResFileLoader):
-        if (loader.is_switch):
+        if loader.is_switch:
             submesh_array_offs = loader.read_offset()
             self.mempool = loader.load(MemoryPool)
             buffer = loader.read_offset()
             buffer_size = loader.load(BufferSize)
             face_buff_offs = loader.read_uint32()
-            self.primitive_type = self.primitive_type_list[
-                self.SwitchPrimitiveType(loader.read_uint32())
-            ]
-            self.index_format = self.index_list[
-                self.SwitchIndexFormat(loader.read_uint32())
-            ]
+            self.primitive_type = self.primitive_type_list[self.SwitchPrimitiveType(loader.read_uint32())]
+            self.index_format = self.index_list[self.SwitchIndexFormat(loader.read_uint32())]
             index_count = loader.read_uint32()
             self.first_vtx = loader.read_uint32()
             num_submesh = loader.read_uint16()
             padding = loader.read_uint16()
-            self.submeshes = loader.load_list(
-                SubMesh, num_submesh, offset=submesh_array_offs
-            )
+            self.submeshes = loader.load_list(SubMesh, num_submesh, offset=submesh_array_offs)
             data_offs = BufferInfo.buff_offs + face_buff_offs
 
             self.index_buffer = Buffer()
             self.index_buffer.flags = buffer_size.flags
-            self.index_buffer.data = [b'']
+            self.index_buffer.data = [b""]
             self.index_buffer.data[0] = loader.load_custom(
                 bytes, lambda: loader.read_bytes(buffer_size.size), data_offs
             )
@@ -170,16 +161,16 @@ class Mesh(ResData):
         UINT32 = 2
 
     class SwitchPrimitiveType(IntEnum):
-        POINTS = 0X00
-        LINES = 0X01
-        LINE_STRIP = 0X02
-        TRIANGLES = 0X03
-        TRIANGLE_STRIP = 0X04
-        LINES_ADJACENCY = 0X05
-        LINE_STRIP_ADJACENCY = 0X06
-        TRIANGLES_ADJACENCY = 0X07
-        TRIANGLE_STRIP_ADJACENCY = 0X08
-        PATCHES = 0X09
+        POINTS = 0x00
+        LINES = 0x01
+        LINE_STRIP = 0x02
+        TRIANGLES = 0x03
+        TRIANGLE_STRIP = 0x04
+        LINES_ADJACENCY = 0x05
+        LINE_STRIP_ADJACENCY = 0x06
+        TRIANGLES_ADJACENCY = 0x07
+        TRIANGLE_STRIP_ADJACENCY = 0x08
+        PATCHES = 0x09
 
     index_list = {
         SwitchIndexFormat.UINT16: GX2IndexFormat.UINT16_LITTLE_ENDIAN,
@@ -224,7 +215,7 @@ class KeyShape(ResData):
 
 
 class BoundingNode(ResData):
-    """Represents a node in a SubMesh bounding tree to determine when to show 
+    """Represents a node in a SubMesh bounding tree to determine when to show
     which sub mesh of a Mesh
     """
 
@@ -248,6 +239,7 @@ class BoundingNode(ResData):
 @dataclass
 class Bounding:
     """Represents a spatial bounding box."""
+
     center: tuple[float, float, float]
     extent: tuple[float, float, float]
 
@@ -256,8 +248,9 @@ class Bounding:
 
 
 class ShapeFlags(IntFlag):
-    """Represents flags determining which data is available for 
+    """Represents flags determining which data is available for
     Shape instances
     """
+
     HAS_VERTEX_BUFFER = 1 << 1
     SUBMESH_BOUNDARY_CONSISTENT = 1 << 2

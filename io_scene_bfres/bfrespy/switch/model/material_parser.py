@@ -7,14 +7,14 @@ from ... import core, models, common
 class MaterialParser:
     @staticmethod
     def load(loader: ResFileSwitchLoader, mat: models.Material):
-        if (loader.res_file.version_major2 >= 9):
+        if loader.res_file.version_major2 >= 9:
             mat.flags = models.MaterialFlags(loader.read_uint32())
         else:
             (loader.load_header_block())
 
         mat.name = loader.load_string()
 
-        if (loader.res_file.version_major2 >= 10):
+        if loader.res_file.version_major2 >= 10:
             MaterialParserV10.load(loader, mat)
             return
 
@@ -24,15 +24,14 @@ class MaterialParser:
         tex_name_array = loader.read_int64()
         sampler_array_offs = loader.read_int64()
         mat.samplers = loader.load_dict_values(models.Sampler)
-        mat.shaderparams = loader.load_dict_values(
-            models.material.ShaderParam)
+        mat.shaderparams = loader.load_dict_values(models.material.ShaderParam)
         source_param_offs = loader.read_int64()
         mat.userdata = loader.load_dict_values(common.UserData)
         volatile_flags_offs = loader.read_int64()
         user_pointer = loader.read_int64()
         sampler_slot_array_offs = loader.read_int64()
         tex_slot_array_offs = loader.read_int64()
-        if (loader.res_file.version_major2 < 9):
+        if loader.res_file.version_major2 < 9:
             mat.flags = models.MaterialFlags(loader.read_uint32())
         idx = loader.read_uint16()
         num_renderinfo = loader.read_uint16()
@@ -44,15 +43,13 @@ class MaterialParser:
         sizParamRaw = loader.read_uint16()
         numUserData = loader.read_uint16()
 
-        if (loader.res_file.version_major2 < 9):
+        if loader.res_file.version_major2 < 9:
             loader.read_uint32()  # Padding
 
-        textures = loader.load_custom(
-            tuple, lambda: loader.load_strings(num_tex_ref), tex_name_array
-        )
+        textures = loader.load_custom(tuple, lambda: loader.load_strings(num_tex_ref), tex_name_array)
 
         mat.texture_refs = []
-        if (textures is not None):
+        if textures is not None:
             for tex in textures:
                 mat.texture_refs.append(models.material.TextureRef(name=tex))
 
@@ -60,23 +57,15 @@ class MaterialParser:
         for sampler in mat.samplers:
             sampler.value.name = sampler.key
 
-        mat.shaderparamdata = loader.load_custom(
-            bytes,
-            lambda: loader.read_bytes(siz_param_source), source_param_offs
-        )
+        mat.shaderparamdata = loader.load_custom(bytes, lambda: loader.read_bytes(siz_param_source), source_param_offs)
 
         mat.volatileflags = loader.load_custom(
-            bytes,
-            lambda: loader.read_bytes(int(math.ceil(num_shaderparam / 8))),
-            volatile_flags_offs
+            bytes, lambda: loader.read_bytes(int(math.ceil(num_shaderparam / 8))), volatile_flags_offs
         )
         mat.texture_slot_array = loader.load_custom(
-            tuple, lambda: loader.read_int64s(num_tex_ref),
-            sampler_slot_array_offs
+            tuple, lambda: loader.read_int64s(num_tex_ref), sampler_slot_array_offs
         )
-        mat.sampler_slot_array = loader.load_custom(
-            tuple, lambda: loader.read_int64s(num_sampler), tex_slot_array_offs
-        )
+        mat.sampler_slot_array = loader.load_custom(tuple, lambda: loader.read_int64s(num_sampler), tex_slot_array_offs)
 
 
 class MaterialParserV10:
@@ -115,55 +104,41 @@ class MaterialParserV10:
             num_bitflags = int(1 + shaderoption_bool_count / 64)
 
             self.attrib_assigns = loader.load_custom(
-                tuple, lambda: loader.load_strings(num_attrib_assign),
-                attrib_assign_offs
+                tuple, lambda: loader.load_strings(num_attrib_assign), attrib_assign_offs
             )
             self.sampler_assigns = loader.load_custom(
-                tuple, lambda: loader.load_strings(num_sampler_assign),
-                sampler_assign_offs
+                tuple, lambda: loader.load_strings(num_sampler_assign), sampler_assign_offs
             )
             self.__option_bit_flags = loader.load_custom(
-                tuple, lambda: loader.read_int64s(num_bitflags),
-                option_choice_toggle_offs
+                tuple, lambda: loader.read_int64s(num_bitflags), option_choice_toggle_offs
             )
-            if (self.shader_assign is not None):
+            if self.shader_assign is not None:
                 self.option_idxs = self.__read_short_idxs(
-                    loader, option_choice_idx_offs,
-                    shaderoption_choice_count,
-                    len(self.shader_assign.options)
+                    loader, option_choice_idx_offs, shaderoption_choice_count, len(self.shader_assign.options)
                 )
                 self.attrib_assign_idxs = self.__read_byte_idxs(
-                    loader, attrib_assign_idxs_offs,
-                    num_attrib_assign,
-                    len(self.shader_assign.attrib_assign)
+                    loader, attrib_assign_idxs_offs, num_attrib_assign, len(self.shader_assign.attrib_assign)
                 )
                 self.sampler_assign_idxs = self.__read_byte_idxs(
-                    loader, sampler_assign_idxs_offs,
-                    (num_sampler_assign),
-                    len(self.shader_assign.sampler_assign)
+                    loader, sampler_assign_idxs_offs, (num_sampler_assign), len(self.shader_assign.sampler_assign)
                 )
 
                 num_choice_vals = shaderoption_choice_count - shaderoption_bool_count
                 self.option_values = loader.load_custom(
-                    tuple, lambda: loader.load_strings(num_choice_vals),
-                    option_choice_string_offs
+                    tuple, lambda: loader.load_strings(num_choice_vals), option_choice_string_offs
                 )
 
                 self.__setup_options_bools(shaderoption_bool_count)
 
-        def __read_byte_idxs(
-                self, loader: core.ResFileLoader,
-                offset, used_count, total_count) -> tuple[int, ...]:
-            if (offset == 0):
+        def __read_byte_idxs(self, loader: core.ResFileLoader, offset, used_count, total_count) -> tuple[int, ...]:
+            if offset == 0:
                 return tuple()
             with loader.temporary_seek(offset, io.SEEK_SET):
                 used_idxs = loader.read_sbytes(used_count)
                 return loader.read_sbytes(total_count)
 
-        def __read_short_idxs(
-                self, loader: core.ResFileLoader,
-                offset, used_count, total_count) -> tuple[int, ...]:
-            if (offset == 0):
+        def __read_short_idxs(self, loader: core.ResFileLoader, offset, used_count, total_count) -> tuple[int, ...]:
+            if offset == 0:
                 return tuple()
             with loader.temporary_seek(offset, io.SEEK_SET):
                 used_idxs = loader.read_int16s(used_count)
@@ -171,16 +146,14 @@ class MaterialParserV10:
 
         def __setup_options_bools(self, count):
             self.option_toggles = []
-            if (count == 0):
+            if count == 0:
                 return
             flags = self.__option_bit_flags
             idx = 0
             for i in range(count):
-                if (i != 0 and i % 64 == 0):
+                if i != 0 and i % 64 == 0:
                     idx += 1
-                self.option_toggles.append(
-                    (self.__option_bit_flags[idx] & (1 << i)) != 0
-                )
+                self.option_toggles.append((self.__option_bit_flags[idx] & (1 << i)) != 0)
 
     class ShaderAssignV10(core.ResData):
         def __init__(self):
@@ -190,8 +163,8 @@ class MaterialParserV10:
             self.sampler_assign = common.ResDict()
             self.options = common.ResDict()
 
-            self.shader_archive_name: str = ''
-            self.shading_model_name: str = ''
+            self.shader_archive_name: str = ""
+            self.shading_model_name: str = ""
 
             self.shaderparam_offs: int
             self.renderinfo_list_offs: int
@@ -279,13 +252,11 @@ class MaterialParserV10:
 
         pos = loader.tell()
 
-        textures = loader.load_custom(
-            list, lambda: loader.load_strings(num_texture_ref),
-            texture_name_array)
+        textures = loader.load_custom(list, lambda: loader.load_strings(num_texture_ref), texture_name_array)
 
         mat.texture_refs = []
 
-        if (textures is not None):
+        if textures is not None:
             for tex in textures:
                 mat.texture_refs.append(models.material.TextureRef(name=tex))
 
@@ -294,31 +265,24 @@ class MaterialParserV10:
             sampler.value.name = sampler.key
 
         mat.texture_slot_array = loader.load_custom(
-            tuple, lambda: loader.read_int64s(num_texture_ref),
-            sampler_slot_array_offs
+            tuple, lambda: loader.read_int64s(num_texture_ref), sampler_slot_array_offs
         )
-        mat.sampler_slot_array = loader.load_custom(
-            tuple, lambda: loader.read_int64s(num_sampler), tex_slot_array_offs)
+        mat.sampler_slot_array = loader.load_custom(tuple, lambda: loader.read_int64s(num_sampler), tex_slot_array_offs)
 
-        if (info is not None and info.shader_assign is not None):
+        if info is not None and info.shader_assign is not None:
             mat.shader_assign = models.material.ShaderAssign()
             mat.shader_assign.shader_archive_name = info.shader_assign.shader_archive_name
             mat.shader_assign.shading_model_name = info.shader_assign.shading_model_name
             mat.shaderparamdata = loader.load_custom(
-                bytes,
-                lambda: loader.read_bytes(
-                    info.shader_assign.shaderparam_size),
-                source_param_offs
+                bytes, lambda: loader.read_bytes(info.shader_assign.shaderparam_size), source_param_offs
             )
             mat.param_idxs = loader.load_custom(
-                tuple,
-                lambda: loader.read_int32s(
-                    len(info.shader_assign.shaderparams)),
-                source_param_idxs
+                tuple, lambda: loader.read_int32s(len(info.shader_assign.shaderparams)), source_param_idxs
             )
 
-            cls.read_renderinfo(loader, info, mat, renderinfo_counter_table,
-                                renderinfo_data_offs, renderinfo_data_table)
+            cls.read_renderinfo(
+                loader, info, mat, renderinfo_counter_table, renderinfo_data_offs, renderinfo_data_table
+            )
             cls.read_shaderparams(loader, info, mat)
 
             cls.load_attribute_assign(info, mat)
@@ -328,18 +292,21 @@ class MaterialParserV10:
             loader.seek(pos, io.SEEK_SET)
 
     @staticmethod
-    def read_renderinfo(loader: ResFileSwitchLoader, info: ShaderInfo,
-                        mat: models.Material, renderinfo_counter_table,
-                        renderinfo_data_offs, renderinfo_data_table):
+    def read_renderinfo(
+        loader: ResFileSwitchLoader,
+        info: ShaderInfo,
+        mat: models.Material,
+        renderinfo_counter_table,
+        renderinfo_data_offs,
+        renderinfo_data_table,
+    ):
         for i in range(len(info.shader_assign.renderinfos)):
             renderinfo = models.material.RenderInfo()
 
             # Info table
-            loader.seek(info.shader_assign.renderinfo_list_offs
-                        + i * 16, io.SEEK_SET)
+            loader.seek(info.shader_assign.renderinfo_list_offs + i * 16, io.SEEK_SET)
             renderinfo.name = loader.load_string()
-            renderinfo.type = models.material.RenderInfoType(
-                loader.read_byte())
+            renderinfo.type = models.material.RenderInfoType(loader.read_byte())
 
             # Counter table
             loader.seek(renderinfo_counter_table + i * 2, io.SEEK_SET)
@@ -356,18 +323,15 @@ class MaterialParserV10:
             mat.renderinfos.append(renderinfo.name, renderinfo)
 
     @staticmethod
-    def read_shaderparams(loader: ResFileSwitchLoader, info: ShaderInfo,
-                          mat: models.Material):
+    def read_shaderparams(loader: ResFileSwitchLoader, info: ShaderInfo, mat: models.Material):
         for i in range(len(info.shader_assign.shaderparams)):
             param = models.material.ShaderParam()
 
-            loader.seek(info.shader_assign.shaderparam_offs
-                        + i * 24, io.SEEK_SET)
+            loader.seek(info.shader_assign.shaderparam_offs + i * 24, io.SEEK_SET)
             pad0 = loader.read_uint64()  # padding
             param.name = loader.load_string()  # name offset
             param.data_offs = loader.read_uint16()  # padding
-            param.type = models.material.ShaderParamType(
-                loader.read_uint16())  # type
+            param.type = models.material.ShaderParamType(loader.read_uint16())  # type
             pad2 = loader.read_uint32()  # padding
 
             mat.shaderparams.append(param.name, param)
@@ -375,12 +339,8 @@ class MaterialParserV10:
     @staticmethod
     def load_attribute_assign(info: ShaderInfo, mat: models.Material):
         for i in range(len(info.shader_assign.attrib_assign)):
-            idx = (info.attrib_assign_idxs[i]
-                   if len(info.attrib_assign_idxs) > 0
-                   else i)
-            value = ("<Default Value>"
-                     if idx == -1
-                     else common.ResString(info.attrib_assigns[idx]))
+            idx = info.attrib_assign_idxs[i] if len(info.attrib_assign_idxs) > 0 else i
+            value = "<Default Value>" if idx == -1 else common.ResString(info.attrib_assigns[idx])
             key = info.shader_assign.attrib_assign.get_key(i)
 
             mat.shader_assign.attrib_assigns.append(key, value)
@@ -388,12 +348,8 @@ class MaterialParserV10:
     @staticmethod
     def load_sampler_assign(info: ShaderInfo, mat: models.Material):
         for i in range(len(info.shader_assign.sampler_assign)):
-            idx = (info.sampler_assign_idxs[i]
-                   if len(info.sampler_assign_idxs) > 0
-                   else i)
-            value = ("<default value>"
-                     if idx == -1
-                     else common.ResString(info.sampler_assigns[idx]))
+            idx = info.sampler_assign_idxs[i] if len(info.sampler_assign_idxs) > 0 else i
+            value = "<default value>" if idx == -1 else common.ResString(info.sampler_assigns[idx])
             key = info.shader_assign.sampler_assign.get_key(i)
 
             mat.shader_assign.sampler_assigns.append(key, value)
@@ -404,16 +360,12 @@ class MaterialParserV10:
         choices = []
         for i in range(len(info.option_toggles)):
             choices.append("true" if info.option_toggles[i] else "false")
-        if (info.option_values is not None):
+        if info.option_values is not None:
             choices.extend(info.option_values)
 
         for i in range(len(info.shader_assign.options)):
-            idx = (info.option_idxs[i]
-                   if len(info.option_idxs) > 0
-                   else i)
-            value = ("<default value>"
-                     if idx == -1
-                     else common.ResString(choices[idx]))
+            idx = info.option_idxs[i] if len(info.option_idxs) > 0 else i
+            value = "<default value>" if idx == -1 else common.ResString(choices[idx])
             key = info.shader_assign.options.get_key(i)
 
             mat.shader_assign.shaderoptions.append(key, value)

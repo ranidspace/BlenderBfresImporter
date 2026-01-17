@@ -19,8 +19,7 @@ class RelocationTable(ResData):
         for i in range(self.section_count):
             sections.append(loader.load(self.ResSection, False))
         for section in sections:
-            file_base = (0 if section.base_pointer == 0
-                         else section.base_pointer - section.region_offs)
+            file_base = 0 if section.base_pointer == 0 else section.base_pointer - section.region_offs
             for e in range(section.entry_count):
                 entry = loader.load(self.ResEntry, False)
                 region_offs = entry.region_offs
@@ -29,23 +28,17 @@ class RelocationTable(ResData):
                 for array_idx in range(entry.array_count):
                     region_offset_iter = region_offs
                     for offset_idx in range(offset_count):
-                        reloc_pointer = (file_base + region_offset_iter
-                                         if region_offset_iter != 0
-                                         else 0)
+                        reloc_pointer = file_base + region_offset_iter if region_offset_iter != 0 else 0
                         self.reloc_dict[region_offset_iter] = reloc_pointer
                         region_offset_iter += 8
-                    region_offs = (region_offs
-                                   + offset_count * 8
-                                   + entry.array_stride * 8)
+                    region_offs = region_offs + offset_count * 8 + entry.array_stride * 8
 
     @staticmethod
     def calc_table_size(sections, entries):
         return sections * 0x18 + entries * 0x8 + 0x10
 
     def get_base_entry_offs(self, idx):
-        return (self.this_table_offs + 0x10
-                + 0x18 * self.section_count
-                + idx * 0x8)
+        return self.this_table_offs + 0x10 + 0x18 * self.section_count + idx * 0x8
 
     def get_section(self, section_idx):
         return self.this_table_offs + 0x10 + section_idx * 0x18

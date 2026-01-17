@@ -31,11 +31,10 @@ class ResFileParser:
         res_file.name = loader.load_string()
         model_offs = loader.read_offset()
         model_dict_offs = loader.read_offset()
-        if (loader.res_file.version_major2 >= 9):
+        if loader.res_file.version_major2 >= 9:
             loader.read_bytes(32)  # reserved
 
-        res_file.skeletal_anims = loader.load_dict_values(
-            skeletal_anim.SkeletonAnim)
+        res_file.skeletal_anims = loader.load_dict_values(skeletal_anim.SkeletonAnim)
         # TODO Read These properly
         res_file.material_anims = loader.read_offset()
         res_file.material_anims = loader.read_offset()
@@ -49,19 +48,18 @@ class ResFileParser:
         res_file.mempool = loader.load(MemoryPool)
         res_file.buffer_info = loader.load(BufferInfo)
 
-        if (loader.res_file.version_major2 >= 10):
+        if loader.res_file.version_major2 >= 10:
             # Peek at external flags
             def peek_flags():
-                with (loader.temporary_seek(0xee, io.SEEK_SET)):
+                with loader.temporary_seek(0xEE, io.SEEK_SET):
                     return loader.read_byte()
 
             flags = peek_flags()
-            if (res_file.has_flag(
-                    flags, res_file.ExternalFlags.HOLDS_EXTERNAL_STRINGS)):
+            if res_file.has_flag(flags, res_file.ExternalFlags.HOLDS_EXTERNAL_STRINGS):
                 externalFileOffset = loader.read_offset()
                 externalFileDict = loader.load_dict(common.ResString)
 
-                with (loader.temporary_seek(externalFileOffset, io.SEEK_SET)):
+                with loader.temporary_seek(externalFileOffset, io.SEEK_SET):
                     common.stringcache.clear()
                     for string in externalFileDict.keys():
                         string_id = loader.read_int64()
@@ -69,9 +67,8 @@ class ResFileParser:
                 return
 
             # GPU section for TOTK
-            if (res_file.has_flag(flags,
-                                  res_file.ExternalFlags.HAS_EXTERNAL_GPU)):
-                with (loader.temporary_seek(siz_file, io.SEEK_SET)):
+            if res_file.has_flag(flags, res_file.ExternalFlags.HAS_EXTERNAL_GPU):
+                with loader.temporary_seek(siz_file, io.SEEK_SET):
                     gpuDataOffset = loader.read_uint32()
                     gpuBufferSize = loader.read_uint32()
 
@@ -85,17 +82,16 @@ class ResFileParser:
         num_model = loader.read_uint16()
 
         # Read models after buffer data
-        res_file.models = loader.load_dict_values(
-            models.Model, model_dict_offs, model_offs)
+        res_file.models = loader.load_dict_values(models.Model, model_dict_offs, model_offs)
 
-        if (loader.res_file.version_major2 >= 9):
+        if loader.res_file.version_major2 >= 9:
             # Count for 2 new sections
             unkCount = loader.read_uint16()
             unk2Count = loader.read_uint16()
 
-            if (unkCount != 0):
+            if unkCount != 0:
                 raise ValueError("unk1 has section!")
-            if (unk2Count != 0):
+            if unk2Count != 0:
                 raise ValueError("unk2 has section!")
 
         num_skeletal_anim = loader.read_uint16()
@@ -104,13 +100,12 @@ class ResFileParser:
         num_shape_anim = loader.read_uint16()
         num_scene_anim = loader.read_uint16()
         num_external_file = loader.read_uint16()
-        res_file.external_flag = res.ResFile.ExternalFlags(
-            loader.read_byte())
+        res_file.external_flag = res.ResFile.ExternalFlags(loader.read_byte())
         reserve10 = loader.read_byte()
 
         padding3 = loader.read_uint32()
 
-        if (reserve10 == 1 or res_file.external_flag != 0):
+        if reserve10 == 1 or res_file.external_flag != 0:
             res_file.data_alignment_override = 0x1000
 
         # TODO External Files and material animations

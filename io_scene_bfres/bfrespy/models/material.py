@@ -4,18 +4,17 @@ from typing import Any
 from ..binary_io import BinaryReader
 
 from .. import core, gx2
-from ..common import (ResDict, ResString, TextureRef, UserData,
-                      Srt2D, Srt3D, TexSrt, TexSrtMode)
+from ..common import ResDict, ResString, TextureRef, UserData, Srt2D, Srt3D, TexSrt, TexSrtMode
 
 
 class Material(core.ResData):
     """Represents an FMAT subsection of a Model subfile, storing information
     on with which textures and how technically a surface is drawn.
     """
+
     _SIGNATURE = "FMAT"
 
     def __init__(self):
-
         self.name = ""
         self.flags = MaterialFlags.VISIBLE
 
@@ -46,7 +45,7 @@ class Material(core.ResData):
 
     @visible.setter
     def visible(self, value):
-        if (value):
+        if value:
             self.flags |= MaterialFlags.VISIBLE
         else:
             self.flags = MaterialFlags.NONE
@@ -59,8 +58,9 @@ class Material(core.ResData):
 
     def load(self, loader: core.ResFileLoader):
         loader._check_signature(self._SIGNATURE)
-        if (loader.is_switch):
+        if loader.is_switch:
             from ..switch.model import MaterialParser
+
             MaterialParser.load(loader, self)
         else:
             self.name = loader.load_string()
@@ -82,23 +82,20 @@ class Material(core.ResData):
             self.samplers = loader.load_dict(Sampler)
             ofs_shaderparam_list = loader.read_offset()  # Only use dict.
             self.shaderparams = loader.load_dict(ShaderParam)
-            self.shaderparamdata = loader.load_custom(
-                bytes, lambda: loader.read_bytes(siz_param_source)
-            )
+            self.shaderparamdata = loader.load_custom(bytes, lambda: loader.read_bytes(siz_param_source))
             self.userdata = loader.load_dict(UserData)
             self.volatileflags = loader.load_custom(
-                bytearray,
-                lambda: loader.read_bytes(math.ceil(num_shaderparam / 8.0))
+                bytearray, lambda: loader.read_bytes(math.ceil(num_shaderparam / 8.0))
             )
             user_pointer = loader.read_uint32()
 
-        self.__read_shaderparams(self.shaderparamdata,
-                                 '<' if loader.is_switch else '>')
+        self.__read_shaderparams(self.shaderparamdata, "<" if loader.is_switch else ">")
 
     def __read_shaderparams(self, data: bytes, endianness: str):
-        if (data is None):
+        if data is None:
             return
         import io
+
         with BinaryReader(io.BytesIO(data)) as reader:
             reader.endianness = endianness
             for param in self.shaderparams.values():
@@ -106,54 +103,84 @@ class Material(core.ResData):
                 param.data = self.__read_param_data(param.type, reader)
 
     def __read_param_data(self, type_, reader: BinaryReader):
-        match (type_):
-            case ShaderParamType.BOOL: return reader.read_bool()
-            case ShaderParamType.BOOL2: return reader.read_bools(2)
-            case ShaderParamType.BOOL3: return reader.read_bools(3)
-            case ShaderParamType.BOOL4: return reader.read_bools(4)
-            case ShaderParamType.FLOAT: return reader.read_single()
-            case ShaderParamType.FLOAT2: return reader.read_singles(2)
-            case ShaderParamType.FLOAT2X2: return reader.read_singles(2 * 2)
-            case ShaderParamType.FLOAT2X3: return reader.read_singles(2 * 3)
-            case ShaderParamType.FLOAT2X4: return reader.read_singles(2 * 4)
-            case ShaderParamType.FLOAT3: return reader.read_singles(3)
-            case ShaderParamType.FLOAT3X2: return reader.read_singles(3 * 2)
-            case ShaderParamType.FLOAT3X3: return reader.read_singles(3 * 3)
-            case ShaderParamType.FLOAT3X4: return reader.read_singles(3 * 4)
-            case ShaderParamType.FLOAT4: return reader.read_singles(4)
-            case ShaderParamType.FLOAT4X2: return reader.read_singles(4 * 2)
-            case ShaderParamType.FLOAT4X3: return reader.read_singles(4 * 3)
-            case ShaderParamType.FLOAT4X4: return reader.read_singles(4 * 4)
-            case ShaderParamType.INT: return reader.read_int32()
-            case ShaderParamType.INT2: return reader.read_int32s(2)
-            case ShaderParamType.INT3: return reader.read_int32s(3)
-            case ShaderParamType.INT4: return reader.read_int32s(4)
-            case ShaderParamType.UINT: return reader.read_int32()
-            case ShaderParamType.UINT2: return reader.read_int32s(2)
-            case ShaderParamType.UINT3: return reader.read_int32s(3)
-            case ShaderParamType.UINT4: return reader.read_int32s(4)
-            case ShaderParamType.RESERVED2: return reader.read_bytes(2)
-            case ShaderParamType.RESERVED3: return reader.read_bytes(3)
-            case ShaderParamType.RESERVED4: return reader.read_bytes(4)
+        match type_:
+            case ShaderParamType.BOOL:
+                return reader.read_bool()
+            case ShaderParamType.BOOL2:
+                return reader.read_bools(2)
+            case ShaderParamType.BOOL3:
+                return reader.read_bools(3)
+            case ShaderParamType.BOOL4:
+                return reader.read_bools(4)
+            case ShaderParamType.FLOAT:
+                return reader.read_single()
+            case ShaderParamType.FLOAT2:
+                return reader.read_singles(2)
+            case ShaderParamType.FLOAT2X2:
+                return reader.read_singles(2 * 2)
+            case ShaderParamType.FLOAT2X3:
+                return reader.read_singles(2 * 3)
+            case ShaderParamType.FLOAT2X4:
+                return reader.read_singles(2 * 4)
+            case ShaderParamType.FLOAT3:
+                return reader.read_singles(3)
+            case ShaderParamType.FLOAT3X2:
+                return reader.read_singles(3 * 2)
+            case ShaderParamType.FLOAT3X3:
+                return reader.read_singles(3 * 3)
+            case ShaderParamType.FLOAT3X4:
+                return reader.read_singles(3 * 4)
+            case ShaderParamType.FLOAT4:
+                return reader.read_singles(4)
+            case ShaderParamType.FLOAT4X2:
+                return reader.read_singles(4 * 2)
+            case ShaderParamType.FLOAT4X3:
+                return reader.read_singles(4 * 3)
+            case ShaderParamType.FLOAT4X4:
+                return reader.read_singles(4 * 4)
+            case ShaderParamType.INT:
+                return reader.read_int32()
+            case ShaderParamType.INT2:
+                return reader.read_int32s(2)
+            case ShaderParamType.INT3:
+                return reader.read_int32s(3)
+            case ShaderParamType.INT4:
+                return reader.read_int32s(4)
+            case ShaderParamType.UINT:
+                return reader.read_int32()
+            case ShaderParamType.UINT2:
+                return reader.read_int32s(2)
+            case ShaderParamType.UINT3:
+                return reader.read_int32s(3)
+            case ShaderParamType.UINT4:
+                return reader.read_int32s(4)
+            case ShaderParamType.RESERVED2:
+                return reader.read_bytes(2)
+            case ShaderParamType.RESERVED3:
+                return reader.read_bytes(3)
+            case ShaderParamType.RESERVED4:
+                return reader.read_bytes(4)
             case ShaderParamType.SRT2D:
-                return Srt2D(reader.read_vector2f(),
-                             reader.read_single(),
-                             reader.read_vector2f())
+                return Srt2D(reader.read_vector2f(), reader.read_single(), reader.read_vector2f())
             case ShaderParamType.SRT3D:
-                return Srt3D(reader.read_vector3f(),
-                             reader.read_vector3f(),
-                             reader.read_vector3f(),
-                             )
+                return Srt3D(
+                    reader.read_vector3f(),
+                    reader.read_vector3f(),
+                    reader.read_vector3f(),
+                )
             case ShaderParamType.TEX_SRT | ShaderParamType.TEX_SRT_EX:
-                return TexSrt(TexSrtMode(reader.read_int32()),
-                              reader.read_vector2f(),
-                              reader.read_single(),
-                              reader.read_vector2f())
+                return TexSrt(
+                    TexSrtMode(reader.read_int32()),
+                    reader.read_vector2f(),
+                    reader.read_single(),
+                    reader.read_vector2f(),
+                )
         return 0
 
 
 class MaterialFlags(IntEnum):
     """Represents general flags specifying how a Material is rendered."""
+
     # uint32
 
     NONE = 0
@@ -165,8 +192,8 @@ class MaterialFlags(IntEnum):
 
 class ShaderAssign(core.ResData):
     def __init__(self):
-        self.shader_archive_name: str = ''
-        self.shading_model_name: str = ''
+        self.shader_archive_name: str = ""
+        self.shading_model_name: str = ""
         self.revision = 0
         self.attrib_assigns: ResDict[ResString] = ResDict()
         self.sampler_assigns: ResDict[ResString] = ResDict()
@@ -194,7 +221,7 @@ class ShaderAssign(core.ResData):
         self.shader_archive_name = loader.load_string()
         self.shading_model_name = loader.load_string()
 
-        if (loader.is_switch):
+        if loader.is_switch:
             self.attrib_assigns = loader.load_dict_values(ResString)
             self.sampler_assigns = loader.load_dict_values(ResString)
             self.shaderoptions = loader.load_dict_values(ResString)
@@ -214,6 +241,7 @@ class ShaderAssign(core.ResData):
 
 class RenderInfoType(IntEnum):
     """Represents the data type of elements of the RenderInfo value array."""
+
     # byte
     INT32 = 0
     SINGLE = 1
@@ -241,61 +269,54 @@ class RenderInfo(core.ResData):
 
     def get_value_int32s(self) -> tuple[int, ...]:
         """Gets the stored value as an array."""
-        if (self.__value is None):
+        if self.__value is None:
             return tuple()
         return tuple(self.__value)
 
     def get_value(self) -> tuple[object, ...]:
         """Gets the stored value as an array."""
-        if (self.__value is None):
+        if self.__value is None:
             return tuple()
         return tuple(self.__value)
 
     def get_value_strings(self) -> tuple[str, ...]:
-        if (self.__value is None or self.type != RenderInfoType.STRING):
-            return ('',)
+        if self.__value is None or self.type != RenderInfoType.STRING:
+            return ("",)
         return tuple(self.__value)
 
     def set_value(self, value):
-        if (len(value) == 0 or isinstance(value[0], int)):
+        if len(value) == 0 or isinstance(value[0], int):
             self.type = RenderInfoType.INT32
-        elif (isinstance(value[0], float)):
+        elif isinstance(value[0], float):
             self.type = RenderInfoType.SINGLE
-        elif (isinstance(value[0], str)):
+        elif isinstance(value[0], str):
             self.type = RenderInfoType.STRING
         self.__value = value
 
     def load(self, loader: core.ResFileLoader):
-        if (loader.is_switch):
+        if loader.is_switch:
             self.name = loader.load_string()
             data_offs = loader.read_offset()
             count = loader.read_uint16()
             self.type = RenderInfoType(loader.read_byte())
             loader.seek(5)
 
-            match (self.type):
+            match self.type:
                 case RenderInfoType.INT32:
-                    self.__value = loader.load_custom(
-                        tuple, lambda: loader.read_int32s(count), data_offs
-                    )
+                    self.__value = loader.load_custom(tuple, lambda: loader.read_int32s(count), data_offs)
                 case RenderInfoType.SINGLE:
-                    self.__value = loader.load_custom(
-                        tuple, lambda: loader.read_singles(count), data_offs
-                    )
+                    self.__value = loader.load_custom(tuple, lambda: loader.read_singles(count), data_offs)
                 case RenderInfoType.STRING:
-                    if (data_offs == 0):       # Some games have empty data
-                        self.__value = ('',)   # offset and no strings
+                    if data_offs == 0:  # Some games have empty data
+                        self.__value = ("",)  # offset and no strings
                     else:
-                        self.__value = loader.load_custom(
-                            tuple,
-                            lambda: loader.load_strings(count), data_offs
-                        )
+                        self.__value = loader.load_custom(tuple, lambda: loader.load_strings(count), data_offs)
         else:
             count = loader.read_uint16()
             self.type = RenderInfoType(loader.read_byte())
             loader.seek(1)
             self.name = loader.load_string()
-            match (self.type):
+            match self.type:
                 case RenderInfoType.INT32:
                     self.__value = loader.read_int32s(count)
                 case RenderInfoType.SINGLE:
@@ -303,10 +324,9 @@ class RenderInfo(core.ResData):
                 case RenderInfoType.STRING:
                     self.__value = loader.load_strings(count)
 
-    def read_data(self, loader: core.ResFileLoader,
-                  typ: RenderInfoType, count):
+    def read_data(self, loader: core.ResFileLoader, typ: RenderInfoType, count):
         self.type = typ
-        match (self.type):
+        match self.type:
             case RenderInfoType.INT32:
                 self.__value = loader.read_int32s(count)
             case RenderInfoType.SINGLE:
@@ -364,9 +384,9 @@ class ShaderParam(core.ResData):
     @property
     def data_size(self):
         """The size of the value in bytes."""
-        if (int(self.type) <= int(ShaderParamType.FLOAT4X4)):
+        if int(self.type) <= int(ShaderParamType.FLOAT4X4):
             return 4 * (self.type.value & 0x03) + 1
-        if (int(self.type) <= int(ShaderParamType.FLOAT4X4)):
+        if int(self.type) <= int(ShaderParamType.FLOAT4X4):
             cols = (int(self.type) & 0x03) + 1
             rows = (int(self.type) - int(ShaderParamType.RESERVED2) >> 2) + 2
             return 4 * cols * rows
@@ -382,11 +402,10 @@ class ShaderParam(core.ResData):
                 return 24
             case ShaderParamType.TEX_SRT_EX:
                 return 28
-        raise ValueError(
-            f"Cannot retrieve size of unknown {self.type.name}")
+        raise ValueError(f"Cannot retrieve size of unknown {self.type.name}")
 
     def load(self, loader: core.ResFileLoader):
-        if (loader.is_switch):
+        if loader.is_switch:
             self.callback_pointer = loader.read_uint64()
             self.name = loader.load_string()
             self.type = ShaderParamType(loader.read_byte())
@@ -400,18 +419,17 @@ class ShaderParam(core.ResData):
             self.type = ShaderParamType(loader.read_byte())
             siz_data = loader.read_byte()
 
-            if (siz_data != self.data_size and siz_data > self.data_size):
+            if siz_data != self.data_size and siz_data > self.data_size:
                 self.use_padding = True
                 self.padding_length = siz_data - self.data_size
 
             self.data_offs = loader.read_uint16()
             self.offset = loader.read_int32()  # Uniform variable offset.
-            if (loader.res_file.version >= 0x03040000):
+            if loader.res_file.version >= 0x03040000:
                 self.callback_pointer = loader.read_uint32()
                 self.depended_idx = loader.read_uint16()
                 self.depend_idx = loader.read_uint16()
-            elif (loader.res_file.version >= 0x03030000
-                  and loader.res_file.version < 0x03040000):
+            elif loader.res_file.version >= 0x03030000 and loader.res_file.version < 0x03040000:
                 self.callback_pointer = loader.read_uint32()
                 self.depended_idx = loader.read_uint16()
                 self.depend_idx = loader.read_uint16()
@@ -423,6 +441,7 @@ class ShaderParamType(IntEnum):
     """Represents the data types in which ShaderParam instances can store their
     value.
     """
+
     # byte
 
     BOOL = 0
@@ -541,8 +560,9 @@ class Sampler(core.ResData):
         return "Sampler{" + str(self.name) + "}"
 
     def load(self, loader: core.ResFileLoader):
-        if (loader.is_switch):
+        if loader.is_switch:
             from ..switch import model
+
             sampler = model.SamplerSwitch()
             sampler.load(loader)
             self.tex_sampler = sampler.to_tex_sampler()
@@ -579,6 +599,7 @@ class Sampler(core.ResData):
 
     class CompareFunction(IntEnum):
         """Represents compare functions used for depth and stencil tests."""
+
         # byte
         NEVER = 0
         LESS = 1
@@ -591,6 +612,7 @@ class Sampler(core.ResData):
 
     class TexBorderType(IntEnum):
         """Represents type of border color to use."""
+
         # byte
         WHITE = 0
         TRANSPARENT = 1
@@ -601,6 +623,7 @@ class Sampler(core.ResData):
         """Represents how to treat texture coordinates outside of the
         normalized coordinate texture range.
         """
+
         REPEAT = 0
         MIRROR = 1
         CLAMP = 2
@@ -608,12 +631,14 @@ class Sampler(core.ResData):
         MIRROR_ONCE = 4
         MIRROR_ONCE_CLAMP_TO_EDGE = 5
 
+
 # Included in GX2, and not Material
 
 
 class TexSampler:
     """Represents a GX2 texture sampler controlling how a texture is sampled
     and drawn onto a surface."""
+
     __CLAMP_X_BIT = 0
     __CLAMP_X_BITS = 3
     __CLAMP_Y_BIT = 3
@@ -646,7 +671,7 @@ class TexSampler:
 
     def __init__(self, values=None):
         self.__filter_flags: int
-        if (values):
+        if values:
             self.values = values
         else:
             self.values = [33559049, 851968, 2147483648]
@@ -668,221 +693,154 @@ class TexSampler:
     @property
     def clamp_x(self):
         """The texture repetition mode on the X axis."""
-        return gx2.GX2TexClamp(
-            core._decode(self.values[0],
-                         self.__CLAMP_X_BIT,
-                         self.__CLAMP_X_BITS))
+        return gx2.GX2TexClamp(core._decode(self.values[0], self.__CLAMP_X_BIT, self.__CLAMP_X_BITS))
 
     @clamp_x.setter
     def clamp_x(self, value):
-        self.values[0] = core._encode(self.values[0],
-                                      value,
-                                      self.__CLAMP_X_BIT,
-                                      self.__CLAMP_X_BITS)
+        self.values[0] = core._encode(self.values[0], value, self.__CLAMP_X_BIT, self.__CLAMP_X_BITS)
 
     @property
     def clamp_y(self):
         """The texture repetition mode on the Y axis."""
-        return gx2.GX2TexClamp(
-            core._decode(self.values[0],
-                         self.__CLAMP_Y_BIT,
-                         self.__CLAMP_Y_BITS))
+        return gx2.GX2TexClamp(core._decode(self.values[0], self.__CLAMP_Y_BIT, self.__CLAMP_Y_BITS))
 
     @clamp_y.setter
     def clamp_y(self, value):
-        self.values[0] = core._encode(self.values[0],
-                                      value,
-                                      self.__CLAMP_Y_BIT,
-                                      self.__CLAMP_Y_BITS)
+        self.values[0] = core._encode(self.values[0], value, self.__CLAMP_Y_BIT, self.__CLAMP_Y_BITS)
 
     @property
     def clamp_z(self):
         """The texture repetition mode on the Z axis."""
-        return gx2.GX2TexClamp(
-            core._decode(self.values[0],
-                         self.__CLAMP_Z_BIT,
-                         self.__CLAMP_Z_BITS))
+        return gx2.GX2TexClamp(core._decode(self.values[0], self.__CLAMP_Z_BIT, self.__CLAMP_Z_BITS))
 
     @clamp_z.setter
     def clamp_z(self, value):
-        self.values[0] = core._encode(self.values[0],
-                                      value,
-                                      self.__CLAMP_Z_BIT,
-                                      self.__CLAMP_Z_BITS)
+        self.values[0] = core._encode(self.values[0], value, self.__CLAMP_Z_BIT, self.__CLAMP_Z_BITS)
 
     @property
     def mag_filter(self):
         """The texture filtering on the X and Y axes when the texture is drawn
         larger than the actual texture's resolution.
         """
-        return gx2.GX2TexXYFilterType(
-            core._decode(self.values[0],
-                         self.__XY_MAG_FILTER_BIT,
-                         self.__XY_MAG_FILTER_BITS))
+        return gx2.GX2TexXYFilterType(core._decode(self.values[0], self.__XY_MAG_FILTER_BIT, self.__XY_MAG_FILTER_BITS))
 
     @mag_filter.setter
     def mag_filter(self, value):
-        self.values[0] = core._encode(self.values[0],
-                                      value,
-                                      self.__XY_MAG_FILTER_BIT,
-                                      self.__XY_MAG_FILTER_BITS)
+        self.values[0] = core._encode(self.values[0], value, self.__XY_MAG_FILTER_BIT, self.__XY_MAG_FILTER_BITS)
 
     @property
     def min_filter(self):
         """The texture filtering on the X and Y axes when the texture is drawn
         smaller than the actual texture's resolution.
         """
-        return gx2.GX2TexXYFilterType(
-            core._decode(self.values[0],
-                         self.__XY_MIN_FILTER_BIT,
-                         self.__XY_MIN_FILTER_BITS))
+        return gx2.GX2TexXYFilterType(core._decode(self.values[0], self.__XY_MIN_FILTER_BIT, self.__XY_MIN_FILTER_BITS))
 
     @min_filter.setter
     def min_filter(self, value):
-        self.values[0] = core._encode(self.values[0],
-                                      value,
-                                      self.__XY_MIN_FILTER_BIT,
-                                      self.__XY_MIN_FILTER_BITS)
+        self.values[0] = core._encode(self.values[0], value, self.__XY_MIN_FILTER_BIT, self.__XY_MIN_FILTER_BITS)
 
     @property
     def z_filter(self):
         """The texture filtering on the Z axis."""
-        return gx2.GX2TexZFilterType(
-            core._decode(self.values[0],
-                         self.__Z_FILTER_BIT,
-                         self.__Z_FILTER_BITS))
+        return gx2.GX2TexZFilterType(core._decode(self.values[0], self.__Z_FILTER_BIT, self.__Z_FILTER_BITS))
 
     @z_filter.setter
     def z_filter(self, value):
-        self.values[0] = core._encode(self.values[0],
-                                      value,
-                                      self.__Z_FILTER_BIT,
-                                      self.__Z_FILTER_BITS)
+        self.values[0] = core._encode(self.values[0], value, self.__Z_FILTER_BIT, self.__Z_FILTER_BITS)
 
     @property
     def mip_filter(self):
         """The texture filtering for mipmaps."""
-        return gx2.GX2TexMipFilterType(
-            core._decode(self.values[0],
-                         self.__MIP_FILTER_BIT,
-                         self.__MIP_FILTER_BITS))
+        return gx2.GX2TexMipFilterType(core._decode(self.values[0], self.__MIP_FILTER_BIT, self.__MIP_FILTER_BITS))
 
     @mip_filter.setter
     def mip_filter(self, value):
-        self.values[0] = core._encode(self.values[0],
-                                      value,
-                                      self.__MIP_FILTER_BIT,
-                                      self.__MIP_FILTER_BITS)
+        self.values[0] = core._encode(self.values[0], value, self.__MIP_FILTER_BIT, self.__MIP_FILTER_BITS)
 
     @property
     def max_anisotropic_ratio(self):
         """The maximum anisotropic filtering level to use."""
         return gx2.GX2TexAnisoRatio(
-            core._decode(self.values[0],
-                         self.__MAX_ANISOTROPIC_RATIO_BIT,
-                         self.__MAX_ANISOTROPIC_RATIO_BITS))
+            core._decode(self.values[0], self.__MAX_ANISOTROPIC_RATIO_BIT, self.__MAX_ANISOTROPIC_RATIO_BITS)
+        )
 
     @max_anisotropic_ratio.setter
     def max_anisotropic_ratio(self, value):
-        self.values[0] = core._encode(self.values[0],
-                                      value,
-                                      self.__MAX_ANISOTROPIC_RATIO_BIT,
-                                      self.__MAX_ANISOTROPIC_RATIO_BITS)
+        self.values[0] = core._encode(
+            self.values[0], value, self.__MAX_ANISOTROPIC_RATIO_BIT, self.__MAX_ANISOTROPIC_RATIO_BITS
+        )
 
     @property
     def border_type(self):
         """Qhat color to draw at places not reached by a texture if the clamp
         mode does not repeat it.
         """
-        return gx2.GX2TexBorderType(
-            core._decode(self.values[0],
-                         self.__BORDER_TYPE_BIT,
-                         self.__BORDER_TYPE_BITS))
+        return gx2.GX2TexBorderType(core._decode(self.values[0], self.__BORDER_TYPE_BIT, self.__BORDER_TYPE_BITS))
 
     @border_type.setter
     def border_type(self, value):
-        self.values[0] = core._encode(self.values[0],
-                                      value,
-                                      self.__BORDER_TYPE_BIT,
-                                      self.__BORDER_TYPE_BITS)
+        self.values[0] = core._encode(self.values[0], value, self.__BORDER_TYPE_BIT, self.__BORDER_TYPE_BITS)
 
     @property
     def depth_compare_func(self):
         """The depth comparison function"""
         return gx2.GX2CompareFunction(
-            core._decode(self.values[0],
-                         self.__DEPTH_COMPARE_FUNC_BIT,
-                         self.__DEPTH_COMPARE_FUNC_BITS))
+            core._decode(self.values[0], self.__DEPTH_COMPARE_FUNC_BIT, self.__DEPTH_COMPARE_FUNC_BITS)
+        )
 
     @depth_compare_func.setter
     def depth_compare_func(self, value):
-        self.values[0] = core._encode(self.values[0],
-                                      value,
-                                      self.__DEPTH_COMPARE_FUNC_BIT,
-                                      self.__DEPTH_COMPARE_FUNC_BITS)
+        self.values[0] = core._encode(
+            self.values[0], value, self.__DEPTH_COMPARE_FUNC_BIT, self.__DEPTH_COMPARE_FUNC_BITS
+        )
 
     @property
     def min_lod(self):
         """The minimum LoD level."""
-        return self.__usingle_4x6_to_single(
-            core._decode(self.values[1],
-                         self.__MIN_LOD_BIT,
-                         self.__MIN_LOD_BITS))
+        return self.__usingle_4x6_to_single(core._decode(self.values[1], self.__MIN_LOD_BIT, self.__MIN_LOD_BITS))
 
     @min_lod.setter
     def min_lod(self, value):
-        self.values[1] = core._encode(self.values[1],
-                                      self.__single_to_usingle4x6(value),
-                                      self.__MIN_LOD_BIT,
-                                      self.__MIN_LOD_BITS)
+        self.values[1] = core._encode(
+            self.values[1], self.__single_to_usingle4x6(value), self.__MIN_LOD_BIT, self.__MIN_LOD_BITS
+        )
 
     @property
     def max_lod(self):
         """The maximum LoD level."""
-        return self.__usingle_4x6_to_single(
-            core._decode(self.values[1],
-                         self.__MAX_LOD_BIT,
-                         self.__MAX_LOD_BITS))
+        return self.__usingle_4x6_to_single(core._decode(self.values[1], self.__MAX_LOD_BIT, self.__MAX_LOD_BITS))
 
     @max_lod.setter
     def max_lod(self, value):
-        self.values[1] = core._encode(self.values[1],
-                                      self.__single_to_usingle4x6(value),
-                                      self.__MAX_LOD_BIT,
-                                      self.__MAX_LOD_BITS)
+        self.values[1] = core._encode(
+            self.values[1], self.__single_to_usingle4x6(value), self.__MAX_LOD_BIT, self.__MAX_LOD_BITS
+        )
 
     @property
     def lod_bias(self):
         """The LoD bias."""  # helpful
-        return self.__single_5x6_to_single(
-            core._decode(self.values[1],
-                         self.__LOD_BIAS_BIT,
-                         self.__LOD_BIAS_BITS))
+        return self.__single_5x6_to_single(core._decode(self.values[1], self.__LOD_BIAS_BIT, self.__LOD_BIAS_BITS))
 
     @lod_bias.setter
     def lod_bias(self, value):
-        self.values[1] = core._encode(self.values[1],
-                                      self.__single_to_single5x6(value),
-                                      self.__LOD_BIAS_BIT,
-                                      self.__LOD_BIAS_BITS)
+        self.values[1] = core._encode(
+            self.values[1], self.__single_to_single5x6(value), self.__LOD_BIAS_BIT, self.__LOD_BIAS_BITS
+        )
 
     @property
     def depth_compare_enabled(self):
-        """A value indicating whether depth comparison is enabled 
+        """A value indicating whether depth comparison is enabled
         (never set for a real console).
         """
         return core.get_bit(self.values[2], self.__DEPTH_COMPARE_BIT)
 
     @depth_compare_enabled.setter
     def depth_compare_enabled(self, value: bool):
-        self.values[2] = core.set_bit(self.values[2],
-                                      self.__DEPTH_COMPARE_BIT,
-                                      value)
+        self.values[2] = core.set_bit(self.values[2], self.__DEPTH_COMPARE_BIT, value)
 
     # Private Methods
 
     def __single_5x6_to_single(self, value: int):
-
         # Use a signed value to get arithmetic right shifts to receive correct
         # negative numbers.
         signed = (value << 20) & 0xFFFFFFFF  # XXX no idea if this is right
@@ -892,15 +850,15 @@ class TexSampler:
         return value / float(64)
 
     def __single_to_single5x6(self, value: float):
-        if (value <= -32):
+        if value <= -32:
             return 32 * 64
-        elif (value >= 31.984375):
+        elif value >= 31.984375:
             return 31.984375 * 64
         return value * 64
 
     def __single_to_usingle4x6(self, value: float):
-        if (value <= 0):
+        if value <= 0:
             return 0
-        elif (value >= 13):
+        elif value >= 13:
             return 13 * 64
         return int(value * 64)

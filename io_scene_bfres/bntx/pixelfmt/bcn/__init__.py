@@ -13,11 +13,11 @@
 import numpy as np
 from . import decompress_
 from .. import TextureFormat
-from . dx10 import BC7
+from .dx10 import BC7
 
 
 class BC1(TextureFormat):
-    id = 0x1a
+    id = 0x1A
     bytes_per_pixel = 4
     depth = 8
 
@@ -25,25 +25,25 @@ class BC1(TextureFormat):
         data = tex.mip_data
         width = tex.width
         height = tex.height
-        if (not isinstance(data, bytes)):
+        if not isinstance(data, bytes):
             try:
                 data = bytes(data)
 
             except:
                 print("Couldn't decompress data")
-                return b''
+                return b""
 
         csize = ((width + 3) // 4) * ((height + 3) // 4) * 8
-        if (len(data) < csize):
+        if len(data) < csize:
             print("Compressed data is incomplete")
-            return b''
+            return b""
 
         data = data[:csize]
         return decompress_.decomp_dxt51(data, width, height)
 
 
 class BC2(TextureFormat):
-    id = 0x1b
+    id = 0x1B
     bytes_per_pixel = 4
     depth = 8
 
@@ -51,25 +51,25 @@ class BC2(TextureFormat):
         data = tex.mip_data
         width = tex.width
         height = tex.height
-        if (not isinstance(data, bytes)):
+        if not isinstance(data, bytes):
             try:
                 data = bytes(data)
 
             except:
                 print("Couldn't decompress data")
-                return b''
+                return b""
 
         csize = ((width + 3) // 4) * ((height + 3) // 4) * 16
-        if (len(data) < csize):
+        if len(data) < csize:
             print("Compressed data is incomplete")
-            return b''
+            return b""
 
         data = data[:csize]
         return decompress_.decomp_dxt53(data, width, height)
 
 
 class BC3(TextureFormat):
-    id = 0x1c
+    id = 0x1C
     bytes_per_pixel = 4
     depth = 8
 
@@ -77,25 +77,25 @@ class BC3(TextureFormat):
         data = tex.mip_data
         width = tex.width
         height = tex.height
-        if (not isinstance(data, bytes)):
+        if not isinstance(data, bytes):
             try:
                 data = bytes(data)
 
             except:
                 print("Couldn't decompress data")
-                return b''
+                return b""
 
         csize = ((width + 3) // 4) * ((height + 3) // 4) * 16
-        if (len(data) < csize):
+        if len(data) < csize:
             print("Compressed data is incomplete")
-            return b''
+            return b""
 
         data = data[:csize]
         return decompress_.decomp_dxt55(data, width, height)
 
 
 class BC4(TextureFormat):
-    id = 0x1d
+    id = 0x1D
     bytes_per_pixel = 4
     depth = 8
 
@@ -104,18 +104,18 @@ class BC4(TextureFormat):
         width = tex.width
         height = tex.height
         snorm = 0 if tex.fmt_dtype == 1 else 1
-        if (not isinstance(data, bytes)):
+        if not isinstance(data, bytes):
             try:
                 data = bytes(data)
 
             except:
                 print("Couldn't decompress data")
-                return b''
+                return b""
 
         csize = ((width + 3) // 4) * ((height + 3) // 4) * 8
-        if (len(data) < csize):
+        if len(data) < csize:
             print("Compressed data is incomplete")
-            return b''
+            return b""
 
         data = data[:csize]
         return decompress_.decomp_bc4(data, width, height, snorm)
@@ -123,14 +123,13 @@ class BC4(TextureFormat):
     @staticmethod
     def decodepixels(data):
         rgba = np.empty(len(data) * 4)
-        rgba[0::4] = rgba[1::4] = rgba[2::4] = np.frombuffer(
-            data, dtype='B') / 255
+        rgba[0::4] = rgba[1::4] = rgba[2::4] = np.frombuffer(data, dtype="B") / 255
         rgba[3::4] = 1
         return rgba
 
 
 class BC5(TextureFormat):
-    id = 0x1e
+    id = 0x1E
     bytes_per_pixel = 4
     depth = 8
 
@@ -139,18 +138,18 @@ class BC5(TextureFormat):
         width = tex.width
         height = tex.height
         snorm = 0 if tex.fmt_dtype == 1 else 1
-        if (not isinstance(data, bytes)):
+        if not isinstance(data, bytes):
             try:
                 data = bytes(data)
 
             except:
                 print("Couldn't decompress data")
-                return b''
+                return b""
 
         csize = ((width + 3) // 4) * ((height + 3) // 4) * 16
-        if (len(data) < csize):
+        if len(data) < csize:
             print("Compressed data is incomplete")
-            return b''
+            return b""
 
         data = data[:csize]
         return decompress_.decomp_bc5(data, width, height, snorm)
@@ -161,7 +160,7 @@ class BC5(TextureFormat):
         g = np.frombuffer(data[1::2], dtype=np.uint8).astype(np.float32) / 255
         x = r * 2 - 1
         y = g * 2 - 1
-        z = abs(1 - x**2 - y**2)**0.5
+        z = abs(1 - x**2 - y**2) ** 0.5
         rgba = np.empty(len(data) * 2, dtype=np.float32)
         rgba[0::4] = r
         rgba[1::4] = g

@@ -5,7 +5,8 @@ from enum import IntFlag
 from .core import ResData
 
 from typing import TYPE_CHECKING
-if (TYPE_CHECKING):
+
+if TYPE_CHECKING:
     from .models import Model
     from .texture import TextureShared
     from .external_file import ExternalFile
@@ -27,7 +28,7 @@ class ResFile(ResData):
 
     def __init__(self, stream: io.BytesIO | io.BufferedReader):
         """Initializes a new instance of the ResFile class from a stream"""
-        self.external_flag: 'ResFile.ExternalFlags'
+        self.external_flag: "ResFile.ExternalFlags"
 
         self.is_platform_switch: bool
 
@@ -46,7 +47,7 @@ class ResFile(ResData):
         self.version_major2: int
         self.version_minor: int
         self.version_minor2: int
-        self.endianness: str = '>'
+        self.endianness: str = ">"
         self.models: ResDict[Model]
         self.textures: ResDict[TextureShared]
         self.skeletal_anims: ResDict[SkeletonAnim]
@@ -55,14 +56,13 @@ class ResFile(ResData):
         self.scene_anims: ResDict[SceneAnims]
         self.external_files: ResDict[ExternalFile]
 
-        if (self.is_switch_binary(stream)):
+        if self.is_switch_binary(stream):
             from .switch.switchcore import ResFileSwitchLoader
 
             with ResFileSwitchLoader(self, stream) as loader:
                 loader._execute()
         else:
-            raise NotImplementedError(
-                "Sorry, WiiU files aren't supported yet")
+            raise NotImplementedError("Sorry, WiiU files aren't supported yet")
 
     def __repr__(self):
         return "ResFile{" + str(self.name) + "}"
@@ -70,9 +70,8 @@ class ResFile(ResData):
     # Public Methods
 
     def is_switch_binary(self, stream):
-
         stream.seek(4, io.SEEK_SET)
-        padding_check = struct.unpack('<I', stream.read(4))[0]
+        padding_check = struct.unpack("<I", stream.read(4))[0]
         stream.seek(0, io.SEEK_SET)
 
         return padding_check == 0x20202020
@@ -81,22 +80,21 @@ class ResFile(ResData):
 
     @property
     def data_alignment(self):
-        if (self.is_platform_switch):
-            return (1 << int(self.alignment))
+        if self.is_platform_switch:
+            return 1 << int(self.alignment)
         else:
             return self.alignment
 
     @data_alignment.setter
     def data_alignment(self, value):
-        if (self.is_platform_switch):
+        if self.is_platform_switch:
             self.alignment = int(value >> 7)
         else:
             self.alignment = int(value)
 
     @property
     def version_full(self):
-        return f'{self.version_major}{self.version_major2}'\
-            f'{self.version_minor}{self.version_minor2}'
+        return f"{self.version_major}{self.version_major2}{self.version_minor}{self.version_minor2}"
 
     # Internal Methods
 
@@ -113,6 +111,7 @@ class ResFile(ResData):
 
     def load(self, loader):
         self.is_platform_switch = loader.is_switch
-        if (loader.is_switch):
+        if loader.is_switch:
             from .switch import res_file_parser as parse
+
             parse.ResFileParser.load(loader, self)
