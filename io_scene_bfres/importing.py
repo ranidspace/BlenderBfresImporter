@@ -87,10 +87,9 @@ class Importer:
 
         bntx_ = bntx.BNTX(stream)
 
-        from .texture_importer import TextureImporter
+        from .texture_importer import import_textures
 
-        tex_imp = TextureImporter(self)
-        self.texture_map = tex_imp.import_textures(bntx_)
+        self.texture_map = import_textures(bntx_, self.operator)
 
         return {"FINISHED"}
 

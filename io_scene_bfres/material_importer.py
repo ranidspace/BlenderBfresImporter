@@ -8,7 +8,7 @@ from .bfrespy.common import ResString
 
 log = logging.getLogger(__name__)
 
-get_tex_wrapper = {
+TEX_WRAPPER = {
     "_a0": "base_color_texture",
     "_r0": "roughness_texture",
     "_m0": "metallic_texture",
@@ -16,7 +16,7 @@ get_tex_wrapper = {
     "_e0": "emission_color_texture",
     "_op0": "alpha_texture",
 }
-texcoord_select = {
+TEXCOORD_SELECT = {
     "_ao0": "ao",
     "_cp0": "comppaint",
     "_e0": "emmmap",
@@ -56,7 +56,7 @@ def import_material(fmat, texture_dict, name_prefix) -> bpy.types.Material:
         i += 1
 
         # Get the bpy Texture Wrapper from the sampler name
-        tex_helper_name = get_tex_wrapper.get(tex_sampler_name)
+        tex_helper_name = TEX_WRAPPER.get(tex_sampler_name)
         if tex_helper_name:
             tex_helper: ShaderImageTextureWrapper = getattr(mat_wrap, tex_helper_name)
             tex_helper.image = image
@@ -103,14 +103,14 @@ def import_material(fmat, texture_dict, name_prefix) -> bpy.types.Material:
 
 
 def set_uv_coords(mat: bpy.types.Material, sampler: str, tex_node: bpy.types.ShaderNodeTexImage):
-    selector = texcoord_select.get(sampler)
+    selector = TEXCOORD_SELECT.get(sampler)
     if selector is None:
         return
     uv_id = mat.get("SO_texcoord_select_" + selector)
     if uv_id and uv_id != "0":
         tree = mat.node_tree
 
-        uv_node: bpy.types.ShaderNodeUVMap = tree.nodes.new(type="ShaderNodeUVMap")
+        uv_node = tree.nodes.new(type="ShaderNodeUVMap")
         uv_node.uv_map = f"_u{uv_id}"
         socket_src = uv_node.outputs["UV"]
 

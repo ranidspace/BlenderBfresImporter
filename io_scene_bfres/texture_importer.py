@@ -6,82 +6,75 @@ import numpy as np
 log = logging.getLogger(__name__)
 
 
-class TextureImporter:
-    """Imports texture images from BNTX archive."""
+def import_textures(bntx, operator):
+    """Import textures from BNTX."""
+    images = {}
+    for i, tex in enumerate(bntx.nx.textures):
+        log.info(
+            "Importing texture %3d/%3d '%s' (%s)...",
+            i + 1,
+            len(bntx.nx.textures),
+            tex.name,
+            type(tex.format_).__name__,
+        )
+        float_buffer = False
+        isdata = not bool(tex.fmt_dtype.name == "SRGB")
+        alpha = bool(b"\x05" in tex.channel_types)
 
-    def __init__(self, parent):
-        self.parent = parent
-        self.operator = parent.operator
+        if tex.fmt_dtype.name in {"UHALF", "SINGLE"}:
+            isdata = False
+            float_buffer = True
 
-    def import_textures(self, bntx):
-        """Import textures from BNTX."""
-        images = {}
-        for i, tex in enumerate(bntx.nx.textures):
-            log.info(
-                "Importing texture %3d/%3d '%s' (%s)...",
-                i + 1,
-                len(bntx.nx.textures),
-                tex.name,
-                type(tex.format_).__name__,
-            )
-            float_buffer = False
-            isdata = not bool(tex.fmt_dtype.name == "SRGB")
-            alpha = bool(b"\x05" in tex.channel_types)
+        image = bpy.data.images.new(
+            name=operator.name_prefix + tex.name,
+            width=tex.width,
+            height=tex.height,
+            float_buffer=float_buffer,
+            alpha=alpha,
+            is_data=isdata,
+        )
 
-            if tex.fmt_dtype.name in {"UHALF", "SINGLE"}:
-                isdata = False
-                float_buffer = True
+        # Issues arise when textures are not multiples of 4, pretty rare.
+        if len(tex.pixels) > tex.width * tex.height * 4:
+            pixels = tex.pixels[: tex.width * tex.height * 4]
+            pixels = tex.format_.decodepixels(pixels)
+        else:
+            pixels = tex.format_.decodepixels(tex.pixels)
 
-            image = bpy.data.images.new(
-                name=self.operator.name_prefix + tex.name,
-                width=tex.width,
-                height=tex.height,
-                float_buffer=float_buffer,
-                alpha=alpha,
-                is_data=isdata,
-            )
+        if operator.component_selector:
+            temppix = pixels.copy()
+            for ch in range(4):
+                if tex.channel_types[ch] == ch + 2:
+                    continue
+                match tex.channel_types[ch]:
+                    case 0:
+                        pixels[ch::4] = 0
+                    case 1:
+                        pixels[ch::4] = 1
+                    case 2:
+                        pixels[ch::4] = temppix[0::4]
+                    case 3:
+                        pixels[ch::4] = temppix[1::4]
+                    case 4:
+                        pixels[ch::4] = temppix[2::4]
+                    case 5:
+                        pixels[ch::4] = temppix[3::4]
 
-            # Issues arise when textures are not multiples of 4, pretty rare.
-            if len(tex.pixels) > tex.width * tex.height * 4:
-                pixels = tex.pixels[: tex.width * tex.height * 4]
-                pixels = tex.format_.decodepixels(pixels)
-            else:
-                pixels = tex.format_.decodepixels(tex.pixels)
+        # Add some file data if it's needed:
+        if tex.fmt_dtype.name in {"UHALF", "SINGLE"}:
+            image.file_format = "OPEN_EXR"
+            image.colorspace_settings.name = "sRGB"
+        else:
+            image.file_format = "PNG"
 
-            if self.operator.component_selector:
-                temppix = pixels.copy()
-                for ch in range(4):
-                    if tex.channel_types[ch] == ch + 2:
-                        continue
-                    match tex.channel_types[ch]:
-                        case 0:
-                            pixels[ch::4] = 0
-                        case 1:
-                            pixels[ch::4] = 1
-                        case 2:
-                            pixels[ch::4] = temppix[0::4]
-                        case 3:
-                            pixels[ch::4] = temppix[1::4]
-                        case 4:
-                            pixels[ch::4] = temppix[2::4]
-                        case 5:
-                            pixels[ch::4] = temppix[3::4]
+        # flip image from dx to gl
+        pixels = np.flipud(pixels.reshape((tex.height, tex.width, 4)))
 
-            # Add some file data if it's needed:
-            if tex.fmt_dtype.name in {"UHALF", "SINGLE"}:
-                image.file_format = "OPEN_EXR"
-                image.colorspace_settings.name = "sRGB"
-            else:
-                image.file_format = "PNG"
+        image.pixels = np.ravel(pixels)
 
-            # flip image from dx to gl
-            pixels = np.flipud(pixels.reshape((tex.height, tex.width, 4)))
+        image.use_fake_user = operator.add_fake_user
 
-            image.pixels = np.ravel(pixels)
-
-            image.use_fake_user = self.parent.operator.add_fake_user
-
-            image.update()
-            image.pack()
-            images[tex.name] = image
-        return images
+        image.update()
+        image.pack()
+        images[tex.name] = image
+    return images

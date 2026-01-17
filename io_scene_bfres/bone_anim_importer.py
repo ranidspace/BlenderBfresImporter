@@ -114,17 +114,17 @@ class BoneAnimationImporter:
                 )
                 fcurve.keyframe_points.insert(frame=0, value=val)
 
-    @staticmethod
-    def __get_curve_frame_val(curve, num):
-        """Return the value at the specific frame of a curve"""
-        frame = max(frame for frame, key in curve.keyframes if frame <= num)
-        keyframe = curve.keyframes[frame]
-        if frame == num:
-            return keyframe.value
-
-        t = num - frame
-        if curve.key_type == AnimCurveType.CUBIC:
-            ...
+    # @staticmethod
+    # def __get_curve_frame_val(curve, num):
+    #     """Return the value at the specific frame of a curve"""
+    #     frame = max(frame for frame, key in curve.keyframes if frame <= num)
+    #     keyframe = curve.keyframes[frame]
+    #     if frame == num:
+    #         return keyframe.value
+    #
+    #     t = num - frame
+    #     if curve.key_type == AnimCurveType.CUBIC:
+    #         ...
 
 
 _flagcurve_to_fcurve = {
