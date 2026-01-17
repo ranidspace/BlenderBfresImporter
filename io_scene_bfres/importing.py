@@ -77,7 +77,7 @@ class Importer:
 
         model_imp = ModelImporter(self)
         for fmdl in bfres.models.values():
-            model_imp._convert_fmdl(fmdl, collection)
+            model_imp.convert_fmdl(fmdl, collection)
 
         return {"FINISHED"}
 
