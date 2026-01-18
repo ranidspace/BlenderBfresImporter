@@ -1,18 +1,19 @@
 from __future__ import annotations
+
 import io
 import struct
 from enum import IntFlag
-from .core import ResData
-
 from typing import TYPE_CHECKING
 
+from .core import ResData
+
 if TYPE_CHECKING:
-    from .models import Model
-    from .texture import TextureShared
-    from .external_file import ExternalFile
     from .common import ResDict, StringTable
+    from .external_file import ExternalFile
+    from .models.model import Model
     from .skeletal_anim import SkeletonAnim
-    from .switch.memory_pool import MemoryPool, BufferInfo
+    from .switch.memory_pool import BufferInfo, MemoryPool
+    from .texture import TextureShared
 
 
 class ResFile(ResData):

@@ -1,10 +1,9 @@
-from ..core import ResData, ResFileLoader
 from ..common import ResDict, UserData
-
+from ..core import ResData, ResFileLoader
+from .material import Material
+from .shape import Shape
 from .skeleton import Skeleton
 from .vertex_buffer_attrib import VertexBuffer
-from .shape import Shape
-from .material import Material
 
 
 class Model(ResData):
@@ -15,7 +14,7 @@ class Model(ResData):
     _SIGNATURE = "FMDL"
 
     def __init__(self):
-        "Initializes a new instance of the Model class."
+        """Initialize a new instance of the Model class."""
         self.name = ""
         self.path = ""
         self.skeleton = Skeleton()
@@ -37,9 +36,9 @@ class Model(ResData):
         return count
 
     def load(self, loader: ResFileLoader):
-        loader._check_signature(self._SIGNATURE)
+        loader.check_signature(self._SIGNATURE)
         if loader.is_switch:
-            from ..switch.model import ModelParser
+            from ..switch.model.model_parser import ModelParser
 
             ModelParser.read(loader, self)
         else:

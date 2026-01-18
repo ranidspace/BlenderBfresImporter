@@ -1,8 +1,9 @@
 from __future__ import annotations
+
 from enum import IntFlag
-from . import core
-from . import common
-from . import models
+
+from . import common, core
+from .models.skeleton import Skeleton
 
 
 class SkeletonAnim(core.ResData):
@@ -21,7 +22,7 @@ class SkeletonAnim(core.ResData):
         """The stored curve data has been baked."""
 
         LOOPING = 1 << 2
-        """The animation repeats from the start after 
+        """The animation repeats from the start after
         the last frame has been played.
         """
 
@@ -56,7 +57,7 @@ class SkeletonAnim(core.ResData):
         self.frame_cnt = 0
         self.baked_size = 0
         self.bone_anims: list[BoneAnim] = []
-        self.bind_skeleton = models.Skeleton()
+        self.bind_skeleton = Skeleton()
         self.bind_idxs: tuple[int, ...] = tuple()
         self.userdata: common.ResDict[common.UserData] = common.ResDict()
 
@@ -119,7 +120,7 @@ class SkeletonAnim(core.ResData):
         self._flags &= ~self._FLAGS_MASK_ROTATE | value
 
     def load(self, loader: core.ResFileLoader):
-        loader._check_signature(self._SIGNATURE)
+        loader.check_signature(self._SIGNATURE)
         if loader.is_switch:
             if loader.res_file.version_major2 >= 9:
                 self._flags = loader.read_uint32()
@@ -128,7 +129,7 @@ class SkeletonAnim(core.ResData):
 
             self.name = loader.load_string()
             self.path = loader.load_string()
-            self.bind_skeleton = loader.load(models.Skeleton)
+            self.bind_skeleton = loader.load(Skeleton)
             bind_idx_array = loader.read_offset()
             bone_anim_array_offset = loader.read_offset()
             self.userdata = loader.load_dict_values(common.UserData)
@@ -168,7 +169,7 @@ class SkeletonAnim(core.ResData):
                     loader.seek(4)  # padding
 
                 self.bone_anims = loader.load_list(BoneAnim, num_bone_anim)
-                self.bind_skeleton = loader.load(models.Skeleton)
+                self.bind_skeleton = loader.load(Skeleton)
                 self.bind_idxs = loader.load_custom(tuple, lambda: loader.read_int16s(num_bone_anim))
                 self.userdata = loader.load_dict(common.UserData)
             else:
@@ -180,7 +181,7 @@ class SkeletonAnim(core.ResData):
                 self.name = loader.load_string()
                 self.path = loader.load_string()
                 self.bone_anims = loader.load_list(BoneAnim, num_bone_anim)
-                self.bind_skeleton = loader.load(models.Skeleton)
+                self.bind_skeleton = loader.load(Skeleton)
                 self.bind_idxs = loader.load_custom(tuple, lambda: loader.read_int16s(num_bone_anim))
 
 

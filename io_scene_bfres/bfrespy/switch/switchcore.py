@@ -1,5 +1,7 @@
 import io
-from .. import core, ResFile, common
+
+from .. import common, core
+from ..res_file import ResFile
 
 
 class ResFileSwitchLoader(core.ResFileLoader):
@@ -7,16 +9,15 @@ class ResFileSwitchLoader(core.ResFileLoader):
         self,
         res_file: ResFile,
         stream: io.BytesIO | io.BufferedReader,
-        leave_open=False,
         res_data: core.ResData | None = None,
     ):
-        super().__init__(res_file, stream, leave_open, res_data)
+        super().__init__(res_file, stream, res_data)
         self.endianness = "<"
         self.is_switch = True
 
     def read_offset(self):
-        """Reads a BFRES offset which is relative to itself,
-        and returns the absolute address
+        """Read a BFRES offset which is relative to itself,
+        and return the absolute address
         """
         offset = self.read_uint64()
         return 0 if offset == 0 else offset

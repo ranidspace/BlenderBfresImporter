@@ -6,7 +6,8 @@ from pathlib import Path
 import bpy
 import zstandard
 
-from . import bfrespy, yaz0
+from . import yaz0
+from .bfrespy.res_file import ResFile
 from .bone_anim_importer import BoneAnimationImporter
 from .exceptions import MalformedFileError, UnsupportedFileTypeError
 from .model_importer import ModelImporter
@@ -17,7 +18,7 @@ log = logging.getLogger(__name__)
 class Importer:
     def __init__(self, operator, filepath):
         self.operator = operator
-        self.bfres: bfrespy.ResFile
+        self.bfres: ResFile
 
         # Extract path information.
         self.filepath = Path(filepath)
@@ -58,7 +59,7 @@ class Importer:
 
     def _import_bfres(self, stream):
         """Import a BFRES file, and return 'FINISHED' if it succeeds"""
-        bfres = bfrespy.ResFile(stream)
+        bfres = ResFile(stream)
         self.bfres = bfres
         # Read and import any external files
         for node in bfres.external_files:
@@ -101,14 +102,13 @@ class Importer:
             # embed text blend file
             obj = bpy.data.texts.new(name=name)
             obj.write(file.data.decode("utf-8"))
+        elif file.data:
+            try:
+                self._load_stream(io.BytesIO(file.data))
+            except UnsupportedFileTypeError as ex:
+                log.debug("Embedded file '%s' is of unsupported type '%s'", name, ex.magic)
         else:
-            if file.data:
-                try:
-                    self._load_stream(io.BytesIO(file.data))
-                except UnsupportedFileTypeError as ex:
-                    log.debug("Embedded file '%s' is of unsupported type '%s'", name, ex.magic)
-            else:
-                log.debug("Embedded file '%s' is empty", name)
+            log.debug("Embedded file '%s' is empty", name)
 
     @staticmethod
     def _get_from_sarc(raw: io.BytesIO | io.BufferedReader):

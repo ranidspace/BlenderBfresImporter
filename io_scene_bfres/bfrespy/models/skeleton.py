@@ -1,6 +1,7 @@
 from enum import IntFlag
-from ..core import ResData, ResFileLoader
+
 from ..common import ResDict, UserData
+from ..core import ResData, ResFileLoader
 
 
 class Bone(ResData):
@@ -268,7 +269,7 @@ class Skeleton(ResData):
     # Methods
 
     def load(self, loader: ResFileLoader):
-        loader._check_signature(self._SIGNATURE)
+        loader.check_signature(self._SIGNATURE)
         if loader.is_switch:
             if loader.res_file.version_major2 >= 9:
                 self._flags = loader.read_uint32()

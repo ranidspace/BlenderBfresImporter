@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import io
+from collections.abc import Collection, Iterator
 from dataclasses import dataclass
-from functools import singledispatchmethod
-from collections.abc import Iterator, Collection
-from typing import TypeVar, Generic, overload, Any
 from enum import IntEnum, IntFlag
+from functools import singledispatchmethod
+from typing import TYPE_CHECKING, Generic, TypeVar, overload
 
-from . import core, texture
+from . import core
+
+if TYPE_CHECKING:
+    from .texture import TextureShared
 
 T = TypeVar("T", bound=core.ResData)
 
@@ -25,7 +28,7 @@ class Decimal10x5:
     _N = 5
     """Number of fractional part bits."""
 
-    def __init__(self, value: int | float, raw=False):
+    def __init__(self, value: float, raw=False):
         # Raw reads a Decimal10x5 by it's raw bit represetation
         if not raw:
             if type(value) is int:
@@ -409,7 +412,7 @@ class TextureRef(core.ResData):
     """Represents a reference to a Texture instance by name."""
 
     def __init__(self, name=""):
-        self.texture: texture.TextureShared
+        self.texture: TextureShared
 
         self.name = name
 
@@ -495,7 +498,7 @@ class StringTable(core.ResData):
             block_size = loader.read_uint64()
             num_strs = loader.read_uint32()
 
-            for i in range(num_strs):
+            for _ in range(num_strs):
                 size = loader.read_uint16()
                 self.strings.append(loader.read_null_string())
                 loader.align(2)
@@ -614,9 +617,7 @@ class Node(Generic[T]):
             self.value = value
 
     def __bool__(self):
-        if hasattr(self, "key"):
-            return True
-        return False
+        return bool(hasattr(self, "key"))
 
     def __repr__(self) -> str:
         return f"ResDictNode('{self.key}': '{self.value}')"

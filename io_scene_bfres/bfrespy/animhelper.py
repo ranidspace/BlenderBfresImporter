@@ -1,6 +1,7 @@
 import math
 from dataclasses import dataclass
-from .common import AnimCurve, AnimCurveKeyType, AnimCurveFrameType, AnimCurveType
+
+from .common import AnimCurve, AnimCurveFrameType, AnimCurveKeyType, AnimCurveType
 
 
 class CurveAnimHelper:

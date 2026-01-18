@@ -1,6 +1,7 @@
 from enum import IntEnum
+
+from ..common import Buffer, ResDict
 from ..core import ResData, ResFileLoader
-from ..common import ResDict, Buffer
 from ..gx2 import GX2AttribFormat
 from ..switch.memory_pool import MemoryPool
 
@@ -21,9 +22,9 @@ class VertexBuffer(ResData):
         self.buffers: list[Buffer] = []
 
     def load(self, loader: ResFileLoader):
-        loader._check_signature(self._SIGNATURE)
+        loader.check_signature(self._SIGNATURE)
         if loader.is_switch:
-            from ..switch.model import VertexBufferParser
+            from ..switch.model.vertex_buffer import VertexBufferParser
 
             VertexBufferParser.load(loader, self)
 

@@ -9,7 +9,7 @@ class RelocationTable(ResData):
         self.section_count: int
 
     def load(self, loader: ResFileLoader):
-        loader._check_signature(self._SIGNATURE)
+        loader.check_signature(self._SIGNATURE)
         self.this_table_offs = loader.read_uint32()
         self.section_count = loader.read_uint32()
         self.reserved = loader.read_uint32()

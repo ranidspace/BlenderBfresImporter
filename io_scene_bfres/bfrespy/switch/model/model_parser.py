@@ -1,6 +1,10 @@
+from ...common import UserData
+from ...models.material import Material
+from ...models.model import Model
+from ...models.shape import Shape
+from ...models.skeleton import Skeleton
+from ...models.vertex_buffer_attrib import VertexBuffer
 from ..switchcore import ResFileSwitchLoader
-from ...models import Model, Shape, Skeleton, Material, VertexBuffer
-from ...common import UserData, Buffer
 
 
 class ModelParser:

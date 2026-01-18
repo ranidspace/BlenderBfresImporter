@@ -1,6 +1,8 @@
 import io
+
+from ...models.shape import KeyShape, Mesh, Shape, ShapeFlags
+from ...models.vertex_buffer_attrib import VertexBuffer
 from ..switchcore import ResFileSwitchLoader
-from ...models import Shape, ShapeFlags, Mesh, VertexBuffer, KeyShape
 
 
 class ShapeParser:
@@ -35,9 +37,9 @@ class ShapeParser:
         num_mesh = loader.read_byte()
         num_keys = loader.read_byte()
         num_target_attr = loader.read_byte()
-        if loader.res_file.version_major2 <= 2 and loader.res_file.version_major == 0:
-            loader.seek(2)  # padding
-        elif loader.res_file.version_major2 >= 9:
+        if (
+            loader.res_file.version_major2 <= 2 and loader.res_file.version_major == 0
+        ) or loader.res_file.version_major2 >= 9:
             loader.seek(2)  # padding
         else:
             loader.seek(6)  # padding

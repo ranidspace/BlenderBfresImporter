@@ -1,7 +1,7 @@
 from enum import IntEnum
-from ... import core
-from ... import models
-from ... import gx2
+
+from ... import core, gx2
+from ...models.material import TexSampler
 
 
 class SamplerSwitch(core.ResData):
@@ -57,7 +57,7 @@ class SamplerSwitch(core.ResData):
     # Methods
 
     def to_tex_sampler(self):
-        sampler = models.TexSampler()
+        sampler = TexSampler()
         sampler.__filter_flags = self.__filter_flags
 
         if self.wrapmode_u in self.clamp_modes:

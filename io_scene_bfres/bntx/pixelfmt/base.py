@@ -12,10 +12,19 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with botwtools.  If not, see <https://www.gnu.org/licenses/>.
-import numpy as np
-import logging
+from __future__ import annotations
 
+import logging
+from typing import ClassVar, TYPE_CHECKING
+
+import numpy as np
+
+from .formatinfo import bpps
+
+if TYPE_CHECKING:
+    from ..brti import BRTI
 log = logging.getLogger(__name__)
+
 
 types = {  # name => id, bytes per pixel
     "R5G6B5": {"id": 0x07, "bpp": 2},
@@ -48,24 +57,30 @@ types = {  # name => id, bytes per pixel
     "ASTC12x12": {"id": 0x3A, "bpp": 16},
 }
 
-fmts = {}
-
 
 class TextureFormat:
-    id = None
-    bytes_per_pixel = 4
-    depth = 8
+    fmts: ClassVar[dict[int, type[TextureFormat]]] = {}
+    _FORMAT_ID = -1
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls.fmts[cls._FORMAT_ID] = cls
+
+    @classmethod
+    def register(cls, format_id: int):
+        def decorator(fmt: type[TextureFormat]):
+            cls.fmts[format_id] = fmt
+
+    @classmethod
+    def get(cls, format_id):
+        if format_id not in cls.fmts:
+            msg = f"Unsupported texture format {hex(format_id)}"
+            raise TypeError(msg)
+        return cls.fmts[format_id]
 
     @staticmethod
-    def get(id):
-        try:
-            return fmts[id]
-        except KeyError:
-            log.error("Unsupported texture format 0x%02X", id)
-            raise TypeError("Unsupported texure format")
-
-    def decompress(self, tex):
-        bpp = self.bytes_per_pixel
+    def decompress(tex: BRTI):
+        bpp = bpps[tex.bpp]
         data = tex.mip_data
         pixels = bytes(tex.mip_data)
         log.debug(
@@ -83,4 +98,4 @@ class TextureFormat:
         return np.frombuffer(data, dtype="B") / 255
 
     def __str__(self):
-        return "<TextureFormat '%s' at 0x%x>" % (type(self).__name__, id(self))
+        return f"<TextureFormat '{type(self).__name__}' at {id(self)}>"

@@ -2,7 +2,6 @@ import io
 import logging
 
 from ..bfrespy import core
-
 from .brti import BRTI
 
 log = logging.getLogger(__name__)
@@ -26,5 +25,5 @@ class NX(core.ResData):
         reserved = loader.read_uint32()
 
         loader.seek(tex_table_array, io.SEEK_SET)
-        for i in range(tex_count):
+        for _ in range(tex_count):
             self.textures.append(loader.load(BRTI))

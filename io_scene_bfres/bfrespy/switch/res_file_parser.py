@@ -1,21 +1,27 @@
 from __future__ import annotations
+
 import io
-from .switchcore import ResFileSwitchLoader
-from .memory_pool import MemoryPool, BufferInfo
-from .. import common, models, skeletal_anim
-from .. import res_file as res
-from .. import external_file as ext
+from typing import TYPE_CHECKING
+
+from .. import common, skeletal_anim
+from ..external_file import ExternalFile
+from ..models.model import Model
+from ..res_file import ResFile
+from .memory_pool import BufferInfo, MemoryPool
+
+if TYPE_CHECKING:
+    from .switchcore import ResFileSwitchLoader
 
 
 class ResFileParser:
     @staticmethod
-    def load(loader: ResFileSwitchLoader, res_file: res.ResFile):
+    def load(loader: ResFileSwitchLoader, res_file: ResFile):
         # File Header
-        loader._check_signature("FRES")
+        loader.check_signature("FRES")
         padding = loader.read_uint32()
         res_file.version = loader.read_uint32()
         res_file.set_version_info(res_file.version)
-        res_file.endianness = loader._read_byte_order()
+        res_file.endianness = loader.read_byte_order()
         res_file.alignment = loader.read_byte()
         # Thanks MasterF0X for pointing out the layout of the these
         res_file.target_addr_size = loader.read_byte()
@@ -56,12 +62,12 @@ class ResFileParser:
 
             flags = peek_flags()
             if res_file.has_flag(flags, res_file.ExternalFlags.HOLDS_EXTERNAL_STRINGS):
-                externalFileOffset = loader.read_offset()
-                externalFileDict = loader.load_dict(common.ResString)
+                external_file_offset = loader.read_offset()
+                external_file_dict = loader.load_dict(common.ResString)
 
-                with loader.temporary_seek(externalFileOffset, io.SEEK_SET):
+                with loader.temporary_seek(external_file_offset, io.SEEK_SET):
                     common.stringcache.clear()
-                    for string in externalFileDict.keys():
+                    for string in external_file_dict:
                         string_id = loader.read_int64()
                         common.stringcache[string_id] = string
                 return
@@ -69,29 +75,29 @@ class ResFileParser:
             # GPU section for TOTK
             if res_file.has_flag(flags, res_file.ExternalFlags.HAS_EXTERNAL_GPU):
                 with loader.temporary_seek(siz_file, io.SEEK_SET):
-                    gpuDataOffset = loader.read_uint32()
-                    gpuBufferSize = loader.read_uint32()
+                    gpu_data_offs = loader.read_uint32()
+                    gpu_buffer_size = loader.read_uint32()
 
                     res_file.buffer_info = BufferInfo()
                     res_file.buffer_info.buff_offs = siz_file + 288
 
-        res_file.external_files = loader.load_dict_values(ext.ExternalFile)
-        padding1 = loader.read_uint64()
+        res_file.external_files = loader.load_dict_values(ExternalFile)
+        loader.seek(8)
         res_file.string_table = loader.load(common.StringTable)
         string_pool_size = loader.read_uint32()
         num_model = loader.read_uint16()
 
         # Read models after buffer data
-        res_file.models = loader.load_dict_values(models.Model, model_dict_offs, model_offs)
+        res_file.models = loader.load_dict_values(Model, model_dict_offs, model_offs)
 
         if loader.res_file.version_major2 >= 9:
             # Count for 2 new sections
-            unkCount = loader.read_uint16()
-            unk2Count = loader.read_uint16()
+            unk_count = loader.read_uint16()
+            unk2_count = loader.read_uint16()
 
-            if unkCount != 0:
+            if unk_count != 0:
                 raise ValueError("unk1 has section!")
-            if unk2Count != 0:
+            if unk2_count != 0:
                 raise ValueError("unk2 has section!")
 
         num_skeletal_anim = loader.read_uint16()
@@ -100,10 +106,10 @@ class ResFileParser:
         num_shape_anim = loader.read_uint16()
         num_scene_anim = loader.read_uint16()
         num_external_file = loader.read_uint16()
-        res_file.external_flag = res.ResFile.ExternalFlags(loader.read_byte())
+        res_file.external_flag = ResFile.ExternalFlags(loader.read_byte())
         reserve10 = loader.read_byte()
 
-        padding3 = loader.read_uint32()
+        loader.seek(4)
 
         if reserve10 == 1 or res_file.external_flag != 0:
             res_file.data_alignment_override = 0x1000

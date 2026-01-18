@@ -1,9 +1,10 @@
 import io
+
+from ...common import Buffer
 from ...core import ResData
-from ..memory_pool import MemoryPool, BufferInfo
+from ...models.vertex_buffer_attrib import VertexAttrib, VertexBuffer
+from ..memory_pool import BufferInfo, MemoryPool
 from ..switchcore import ResFileSwitchLoader
-from ...models import VertexBuffer, VertexAttrib
-from ...common import UserData, Buffer
 
 
 class VertexBufferStride(ResData):

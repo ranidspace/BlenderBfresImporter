@@ -1,13 +1,18 @@
 import io
 import logging
+import math
 from enum import IntEnum
 
 from ..bfrespy import core
-from .pixelfmt import TextureFormat
+from .pixelfmt.base import TextureFormat
 from .pixelfmt.formatinfo import blk_dims, bpps
-from .pixelfmt.swizzle import deswizzle, div_round_up, pow2_round_up
+from .pixelfmt.swizzle import deswizzle
 
 log = logging.getLogger(__name__)
+
+
+def pow2_round_up(x):
+    return 1 if x == 0 else 2 ** (x - 1).bit_length()
 
 
 class BRTI(core.ResData):
@@ -21,7 +26,7 @@ class BRTI(core.ResData):
         self.mip_data: bytes
 
     def load(self, loader: core.ResFileLoader):
-        loader._check_signature(self.__signature)
+        loader.check_signature(self.__signature)
         length = loader.read_uint32()
         length1 = loader.read_uint64()
         self.flags = loader.read_byte()  # Texture Info
@@ -50,7 +55,7 @@ class BRTI(core.ResData):
         parent_offset = loader.read_offset()
         ptrs_offset = loader.read_offset()
 
-        self.fmt_id = self.format_.id
+        self.fmt_id = self.format_._FORMAT_ID
         self.bpp = bpps[self.fmt_id]
 
         if (self.fmt_id) in blk_dims:
@@ -60,7 +65,7 @@ class BRTI(core.ResData):
         self.blk_height_log2 = texture_layout & 7
 
         with loader.temporary_seek(ptrs_offset):
-            for i in range(mipmap_cnt):
+            for _ in range(mipmap_cnt):
                 entry = loader.read_uint32()  # - base
                 loader.seek(4)
                 self.mip_offsets.append(entry)
@@ -102,9 +107,9 @@ class BRTI(core.ResData):
         blk_height_shift = 0
         mip_offset = self.mip_offsets[0]
 
-        size = div_round_up(self.width, self.blk_width) * div_round_up(self.height, self.blk_height) * self.bpp
+        size = math.ceil(self.width / self.blk_width) * math.ceil(self.height / self.blk_height) * self.bpp
 
-        if pow2_round_up(div_round_up(self.height, self.blk_height)) < lines_per_blk_height:
+        if pow2_round_up(math.ceil(self.height / self.blk_height)) < lines_per_blk_height:
             blk_height_shift += 1
 
         result = deswizzle(

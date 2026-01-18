@@ -2,7 +2,6 @@ import bpy
 import mathutils as mu
 
 from .bfrespy.animhelper import CurveAnimHelper
-from .bfrespy.common import AnimCurveType
 from .bfrespy.skeletal_anim import BoneAnimFlagsBase
 
 

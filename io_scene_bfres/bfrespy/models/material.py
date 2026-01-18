@@ -1,10 +1,10 @@
 import math
 from enum import IntEnum, auto
 from typing import Any
-from ..binary_io import BinaryReader
 
 from .. import core, gx2
-from ..common import ResDict, ResString, TextureRef, UserData, Srt2D, Srt3D, TexSrt, TexSrtMode
+from ..binary_io import BinaryReader
+from ..common import ResDict, ResString, Srt2D, Srt3D, TexSrt, TexSrtMode, TextureRef, UserData
 
 
 class Material(core.ResData):
@@ -57,9 +57,9 @@ class Material(core.ResData):
         return slots
 
     def load(self, loader: core.ResFileLoader):
-        loader._check_signature(self._SIGNATURE)
+        loader.check_signature(self._SIGNATURE)
         if loader.is_switch:
-            from ..switch.model import MaterialParser
+            from ..switch.model.material_parser import MaterialParser
 
             MaterialParser.load(loader, self)
         else:
@@ -561,9 +561,9 @@ class Sampler(core.ResData):
 
     def load(self, loader: core.ResFileLoader):
         if loader.is_switch:
-            from ..switch import model
+            from ..switch.model.sampler_switch import SamplerSwitch
 
-            sampler = model.SamplerSwitch()
+            sampler = SamplerSwitch()
             sampler.load(loader)
             self.tex_sampler = sampler.to_tex_sampler()
         else:

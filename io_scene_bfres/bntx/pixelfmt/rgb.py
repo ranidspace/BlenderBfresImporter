@@ -12,20 +12,21 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with botwtools.  If not, see <https://www.gnu.org/licenses/>.
-import numpy as np
-from .base import TextureFormat
 import logging
+
+import numpy as np
+
+from .base import TextureFormat
 
 log = logging.getLogger(__name__)
 
 
 class R8(TextureFormat):
-    id = 0x02
-    bytes_per_pixel = 1
+    _FORMAT_ID = 0x02
 
     @staticmethod
     def decodepixels(data):
-        pixels = np.frombuffer(data, dtype="B") / 255
+        pixels = np.frombuffer(data, dtype="B") / 0xFF
         rgba = np.empty((pixels.size * 4), dtype=pixels.dtype)
         rgba[0::4] = pixels
         rgba[1::4] = pixels
@@ -36,15 +37,14 @@ class R8(TextureFormat):
 
 class R5G6B5(TextureFormat):
     # XXX untested code, needs confirmation
-    id = 0x07
-    bytes_per_pixel = 2
+    _FORMAT_ID = 0x07
 
     @staticmethod
     def decodepixels(data):
         pixels = np.frombuffer(data, dtype="H")
-        r = (pixels & 0x1F) / 31
-        g = ((pixels >> 5) & 0x3F) / 63
-        b = ((pixels >> 11) & 0x1F) / 31
+        r = (pixels & 0x1F) / 0x1F
+        g = ((pixels >> 5) & 0x3F) / 0x3F
+        b = ((pixels >> 11) & 0x1F) / 0x1F
         rgba = np.empty((pixels.size * 4), dtype=r.dtype)
         rgba[0::4] = r
         rgba[1::4] = g
@@ -55,12 +55,11 @@ class R5G6B5(TextureFormat):
 
 class R8G8(TextureFormat):
     # XXX untested code, needs confirmation
-    id = 0x09
-    bytes_per_pixel = 2
+    _FORMAT_ID = 0x09
 
     @staticmethod
     def decodepixels(data):
-        pixels = np.frombuffer(data, dtype="B") / 255
+        pixels = np.frombuffer(data, dtype="B") / 0xFF
         rgba = np.empty((pixels.size * 2), dtype=pixels.dtype)
         rgba[0::4] = pixels[0::2]
         rgba[1::4] = pixels[1::2]
@@ -71,14 +70,13 @@ class R8G8(TextureFormat):
 
 class R16(TextureFormat):
     # XXX untested code, needs confirmation
-    id = 0x0A
-    bytes_per_pixel = 2
+    _FORMAT_ID = 0x0A
     depth = 16
 
     @staticmethod
     def decodepixels(data):
         rgba = np.empty(len(data) * 4, dtype=np.float32)
-        rgba[0::4] = np.frombuffer(data, dtype="B") / 65536
+        rgba[0::4] = np.frombuffer(data, dtype="B") / 0x10000  # ?
         rgba[1::4] = 0
         rgba[2::4] = 0
         rgba[3::4] = 0
@@ -86,22 +84,20 @@ class R16(TextureFormat):
 
 
 class R8G8B8A8(TextureFormat):
-    id = 0x0B
-    bytes_per_pixel = 4
+    _FORMAT_ID = 0x0B
 
 
 class R11G11B10(TextureFormat):
     # XXX untested code, needs confirmation
-    id = 0x0F
-    bytes_per_pixel = 4
+    _FORMAT_ID = 0x0F
     depth = 16
 
     @staticmethod
     def decodepixels(data):
         pixels = np.frombuffer(data, dtype="I")
-        r = (pixels & 0x07FF) / 2047
-        g = ((pixels >> 11) & 0x07FF) / 2047
-        b = ((pixels >> 22) & 0x03FF) / 1023
+        r = (pixels & 0x07FF) / 0x7FF
+        g = ((pixels >> 11) & 0x07FF) / 0x7FF
+        b = ((pixels >> 22) & 0x03FF) / 0x3FF
         rgba = np.empty((r.size * 4), dtype=r.dtype)
         rgba[0::4] = r
         rgba[1::4] = g
@@ -112,14 +108,12 @@ class R11G11B10(TextureFormat):
 
 class R32(TextureFormat):
     # XXX untested code, needs confirmation
-    id = 0x14
-    bytes_per_pixel = 4
-    depth = 32
+    _FORMAT_ID = 0x14
 
     @staticmethod
     def decodepixels(data):
-        rgba = np.empty((len(data) * 4))
-        rgba[0::4] = np.frombuffer(data, dtype="I") / 4294967295
+        rgba = np.empty(len(data) * 4)
+        rgba[0::4] = np.frombuffer(data, dtype="I") / 0xFFFFFFFF
         rgba[1::4] = 0
         rgba[2::4] = 0
         rgba[3::4] = 0

@@ -1,32 +1,30 @@
 """Code referenced from Syroot/io_scene_bfres licensed unfer MIT"""
 
 from __future__ import annotations
+
 import io
 import struct
-import numpy
+
+import numpy as np
 
 
 class BinaryReader:
     """A wrapper to read binary data as other formats"""
 
-    def __init__(self, stream: io.BytesIO | io.BufferedReader, leave_open=False):
+    def __init__(self, stream: io.BytesIO | io.BufferedReader | bytes):
         self.endianness: str
-        self.leave_open = leave_open
-        self.stream = stream
+        self.stream: io.BytesIO | io.BufferedReader
 
-        if type(stream) is bytes:
-            stream = io.BytesIO(stream)
-            return super().__init__(stream)
+        if isinstance(stream, bytes):
+            self.stream = io.BytesIO(stream)
+        else:
+            self.stream = stream
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.leave_open is False:
-            self.stream.close()
-        else:
-            print("nothing happened")
-            return
+        self.stream.close()
 
     def temporary_seek(self, offset=None, origin=None):
         if offset is None:
@@ -52,8 +50,7 @@ class BinaryReader:
         while i[0] != 0:
             text += i
             i = self.stream.read(1)
-        text = text.decode(encoding)
-        return text
+        return text.decode(encoding)
 
     # Unsigned
 
@@ -112,38 +109,35 @@ class BinaryReader:
     def read_bool(self) -> bool:
         return bool(struct.unpack(self.endianness + "?", self.stream.read(1))[0])
 
-    def read_bools(self, count) -> tuple[bool, ...]:
+    def read_bools(self, count: int) -> tuple[bool, ...]:
         return struct.unpack(self.endianness + str(int(count)) + "?", self.stream.read(count))
 
     def read_single(self) -> float:
         return struct.unpack(self.endianness + "f", self.stream.read(4))[0]
 
-    def read_singles(self, count) -> tuple[float, ...]:
-        return struct.unpack(self.endianness + str(int(count)) + "f", self.stream.read(4 * count))
+    def read_singles(self, count: int) -> tuple[float, ...]:
+        return struct.unpack(self.endianness + str(count) + "f", self.stream.read(4 * count))
 
     def read_raw_string(self, length, encoding=None) -> str:
         encoding = encoding if encoding is not None else "utf-8"
         return self.stream.read(length).decode(encoding)
 
-    def read_matrix_3x4(self) -> numpy.ndarray:
-        return numpy.reshape(self.read_singles(12), (3, 4))
+    def read_matrix_3x4(self) -> np.ndarray:
+        return np.reshape(self.read_singles(12), (3, 4))
 
-    def read_matrix_3x4s(self, count) -> list[numpy.ndarray]:
-        values = []
-        for i in range(count):
-            values.append(self.read_matrix_3x4())
-        return values
+    def read_matrix_3x4s(self, count) -> list[np.ndarray]:
+        return [self.read_matrix_3x4() for _ in range(count)]
 
     # Type hinting is mostly just for fun but this genuinely bothered me that
     # you couldnt add set lengths, you have to just write it a bunch of times.
     def read_vector2f(self) -> tuple[float, float]:
-        return (self.read_single(), self.read_single())
+        return struct.unpack(self.endianness + "2f", self.stream.read(8))
 
     def read_vector3f(self) -> tuple[float, float, float]:
-        return (self.read_single(), self.read_single(), self.read_single())
+        return struct.unpack(self.endianness + "3f", self.stream.read(12))
 
     def read_vector4f(self) -> tuple[float, float, float, float]:
-        return (self.read_single(), self.read_single(), self.read_single(), self.read_single())
+        return struct.unpack(self.endianness + "4f", self.stream.read(16))
 
     def read_bounding(self):
         """Reads a Bounding instance from the current stream

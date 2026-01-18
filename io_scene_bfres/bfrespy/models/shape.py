@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from enum import IntFlag, IntEnum
+from enum import IntEnum, IntFlag
 
+from ..common import Buffer, ResDict
 from ..core import ResData, ResFileLoader
-from ..common import ResDict, Buffer
-from ..gx2 import GX2PrimitiveType, GX2IndexFormat
-from ..switch.memory_pool import MemoryPool, BufferSize, BufferInfo
-from . import VertexBuffer
+from ..gx2 import GX2IndexFormat, GX2PrimitiveType
+from ..switch.memory_pool import BufferInfo, BufferSize, MemoryPool
+from .vertex_buffer_attrib import VertexBuffer
 
 
 class Shape(ResData):
@@ -54,9 +54,9 @@ class Shape(ResData):
             self.flags &= ShapeFlags.SUBMESH_BOUNDARY_CONSISTENT
 
     def load(self, loader: ResFileLoader):
-        loader._check_signature(self._SIGNATURE)
+        loader.check_signature(self._SIGNATURE)
         if loader.is_switch:
-            from ..switch.model import ShapeParser
+            from ..switch.model.shape_parser import ShapeParser
 
             ShapeParser.read(loader, self)
 
@@ -69,7 +69,7 @@ class Mesh(ResData):
 
     def __init__(self):
         self.primitive_type = GX2PrimitiveType.TRIANGLES
-        """The GX2PrimitiveType which determines how indices are used to 
+        """The GX2PrimitiveType which determines how indices are used to
         form polygons.
         """
 
@@ -89,7 +89,7 @@ class Mesh(ResData):
         self.mempool = MemoryPool()
 
         self.first_vtx: int
-        """The offset to the first vertex element of a VertexBuffer to 
+        """The offset to the first vertex element of a VertexBuffer to
         reference by indices.
         """
 
@@ -117,10 +117,7 @@ class Mesh(ResData):
             case GX2IndexFormat.UINT32 | GX2IndexFormat.UINT32_LITTLE_ENDIAN:
                 return 4
             case _:
-                raise ValueError(
-                    f"Invalid GX2IndexFormat \
-                                 {self.index_format.name}."
-                )
+                raise ValueError("Invalid GX2IndexFormat %s.", self.index_format.name)
 
     @property
     def format_byte_order(self):
@@ -130,7 +127,7 @@ class Mesh(ResData):
             case GX2IndexFormat.UINT16 | GX2IndexFormat.UINT32:
                 return ">"
             case _:
-                raise ValueError(f"Invalid GX2IndexFormat{self.index_format.name}.")
+                raise ValueError("Invalid GX2IndexFormat %s.", self.index_format.name)
 
     def load(self, loader: ResFileLoader):
         if loader.is_switch:
@@ -144,7 +141,7 @@ class Mesh(ResData):
             index_count = loader.read_uint32()
             self.first_vtx = loader.read_uint32()
             num_submesh = loader.read_uint16()
-            padding = loader.read_uint16()
+            _ = loader.seek(2)
             self.submeshes = loader.load_list(SubMesh, num_submesh, offset=submesh_array_offs)
             data_offs = BufferInfo.buff_offs + face_buff_offs
 
