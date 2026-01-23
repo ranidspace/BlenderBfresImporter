@@ -4,7 +4,7 @@ from enum import IntEnum, IntFlag
 from ..common import Buffer, ResDict
 from ..core import ResData, ResFileLoader
 from ..gx2 import GX2IndexFormat, GX2PrimitiveType
-from ..switch.memory_pool import BufferInfo, BufferSize, MemoryPool
+from ..switch.memory_pool import BufferTextureViewInfo, BufferInfo, MemoryPool
 from .vertex_buffer_attrib import VertexBuffer
 
 
@@ -134,7 +134,7 @@ class Mesh(ResData):
             submesh_array_offs = loader.read_offset()
             self.mempool = loader.load(MemoryPool)
             buffer = loader.read_offset()
-            buffer_size = loader.load(BufferSize)
+            buffer_size = loader.load(BufferInfo)
             face_buff_offs = loader.read_uint32()
             self.primitive_type = self.primitive_type_list[self.SwitchPrimitiveType(loader.read_uint32())]
             self.index_format = self.index_list[self.SwitchIndexFormat(loader.read_uint32())]
@@ -143,7 +143,7 @@ class Mesh(ResData):
             num_submesh = loader.read_uint16()
             _ = loader.seek(2)
             self.submeshes = loader.load_list(SubMesh, num_submesh, offset=submesh_array_offs)
-            data_offs = BufferInfo.buff_offs + face_buff_offs
+            data_offs = BufferTextureViewInfo.buff_offs + face_buff_offs
 
             self.index_buffer = Buffer()
             self.index_buffer.flags = buffer_size.flags

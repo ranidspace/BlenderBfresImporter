@@ -3,7 +3,7 @@ import io
 from ...common import Buffer
 from ...core import ResData
 from ...models.vertex_buffer_attrib import VertexAttrib, VertexBuffer
-from ..memory_pool import BufferInfo, MemoryPool
+from ..memory_pool import BufferTextureViewInfo, MemoryPool
 from ..switchcore import ResFileSwitchLoader
 
 
@@ -67,7 +67,7 @@ class VertexBufferParser:
         vtx_buff_size_array = loader.load_list(VertexBufferSize, num_buffer, vtx_buff_size_offs)
 
         vtx_buffer.buffers = []
-        with loader.temporary_seek(BufferInfo.buff_offs + buff_offs, io.SEEK_SET):
+        with loader.temporary_seek(BufferTextureViewInfo.buff_offs + buff_offs, io.SEEK_SET):
             for buff in range(num_buffer):
                 buffer = Buffer()
                 buffer.data = [b""]

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from .external_file import ExternalFile
     from .models.model import Model
     from .skeletal_anim import SkeletonAnim
-    from .switch.memory_pool import BufferInfo, MemoryPool
+    from .switch.memory_pool import BufferTextureViewInfo, MemoryPool
     from .texture import TextureShared
 
 
@@ -41,7 +41,7 @@ class ResFile(ResData):
         self.flags: int
         self.block_offs: int
         self.mempool: MemoryPool
-        self.buffer_info: BufferInfo
+        self.buffer_info: BufferTextureViewInfo
         self.string_table: StringTable
         self.material_anims: ResDict[MaterialAnim]  # = ResDict(MaterialAnim)
         self.version_major: int

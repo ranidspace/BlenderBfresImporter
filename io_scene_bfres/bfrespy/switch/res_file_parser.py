@@ -7,7 +7,7 @@ from .. import common, skeletal_anim
 from ..external_file import ExternalFile
 from ..models.model import Model
 from ..res_file import ResFile
-from .memory_pool import BufferInfo, MemoryPool
+from .memory_pool import BufferTextureViewInfo, MemoryPool
 
 if TYPE_CHECKING:
     from .switchcore import ResFileSwitchLoader
@@ -17,8 +17,7 @@ class ResFileParser:
     @staticmethod
     def load(loader: ResFileSwitchLoader, res_file: ResFile):
         # File Header
-        loader.check_signature("FRES")
-        padding = loader.read_uint32()
+        loader.check_signature("FRES    ")
         res_file.version = loader.read_uint32()
         res_file.set_version_info(res_file.version)
         res_file.endianness = loader.read_byte_order()
@@ -31,17 +30,14 @@ class ResFileParser:
         relocation_table_offs = loader.read_uint32()
         siz_file = loader.read_uint32()
 
-        # loader.load_relocation_table(relocation_table_offs)
-
         # Bfres Header
         res_file.name = loader.load_string()
         model_offs = loader.read_offset()
         model_dict_offs = loader.read_offset()
         if loader.res_file.version_major2 >= 9:
             loader.read_bytes(32)  # reserved
-
         res_file.skeletal_anims = loader.load_dict_values(skeletal_anim.SkeletonAnim)
-        # TODO Read These properly
+
         res_file.material_anims = loader.read_offset()
         res_file.material_anims = loader.read_offset()
         res_file.bone_visibility_anims = loader.read_offset()
@@ -52,7 +48,7 @@ class ResFileParser:
         res_file.scene_anims = loader.read_offset()
 
         res_file.mempool = loader.load(MemoryPool)
-        res_file.buffer_info = loader.load(BufferInfo)
+        res_file.buffer_info = loader.load(BufferTextureViewInfo)
 
         if loader.res_file.version_major2 >= 10:
             # Peek at external flags
@@ -78,7 +74,7 @@ class ResFileParser:
                     gpu_data_offs = loader.read_uint32()
                     gpu_buffer_size = loader.read_uint32()
 
-                    res_file.buffer_info = BufferInfo()
+                    res_file.buffer_info = BufferTextureViewInfo()
                     res_file.buffer_info.buff_offs = siz_file + 288
 
         res_file.external_files = loader.load_dict_values(ExternalFile)

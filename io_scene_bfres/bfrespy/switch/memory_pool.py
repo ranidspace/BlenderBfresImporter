@@ -14,7 +14,7 @@ class MemoryPool(ResData):
         # nothing?
 
 
-class BufferSize(ResData):
+class BufferInfo(ResData):
     """Represents a buffer info section."""
 
     def __init__(self):
@@ -27,7 +27,7 @@ class BufferSize(ResData):
         loader.seek(40)
 
 
-class BufferInfo(ResData):
+class BufferTextureViewInfo(ResData):
     """Represents an buffer info section in a ResFile subfile. References
     vertex and index buffers.
     """
@@ -39,7 +39,7 @@ class BufferInfo(ResData):
     unk = 34
 
     def load(self, loader: ResFileLoader):
-        BufferInfo.unk = loader.read_uint32()
+        BufferTextureViewInfo.unk = loader.read_uint32()
         size = loader.read_uint32()
-        BufferInfo.buff_offs = loader.read_int64()
-        padding = loader.read_bytes(16)
+        BufferTextureViewInfo.buff_offs = loader.read_int64()
+        loader.seek(16)  # padding

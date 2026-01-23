@@ -9,6 +9,7 @@ from . import binary_io as bin_io
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from .common import ResDict
 
 
 class ResData(ABC):
@@ -62,21 +63,18 @@ class ResFileLoader(bin_io.BinaryReader):
         """Start deserializing the data from the ResFile root."""
         self.res_file.load(self)
 
-    def load(self, _I: type[_I], use_offset=True) -> _I:
+    def load(self, data_type: type[_I], use_offset=True) -> _I:
         """Read and return a ResData instance of type _I from the following
         offset or return None if the read offset is 0.
         """
         if not use_offset:
-            return self.__read_res_data(_I)
+            return self.__read_res_data(data_type)
         offset = self.read_offset()
         if offset == 0:
-            return _I()
+            return data_type()
         with self.temporary_seek(offset, io.SEEK_SET):
-            return self.__read_res_data(_I)
+            return self.__read_res_data(data_type)
 
-    # When blender updates to python >3.12 you can do:
-    # def load_custom[_T](self, callback: Callable[[], _T], offset=None) -> _T:
-    # and then return _T()
     def load_custom(self, typ: type[_T], callback: Callable[[], _T], offset=None) -> _T:
         """Read and return an instance of arbitrary type _I from the following
         offset with the given callback or return None if the read offset is 0.
@@ -87,7 +85,7 @@ class ResFileLoader(bin_io.BinaryReader):
         with self.temporary_seek(offset, io.SEEK_SET):
             return callback()
 
-    def load_dict(self, _I):
+    def load_dict(self, dict_type: type[_I]) -> ResDict[_I]:
         """Read and return a ResDict instance with elements of type _I from
         the following offset or return an empty instance if the read offset
         is 0.
@@ -100,20 +98,20 @@ class ResFileLoader(bin_io.BinaryReader):
 
         with self.temporary_seek(offset, io.SEEK_SET):
             dict_ = ResDict()
-            dict_.load(_I, self)
+            dict_.load(dict_type, self)
             return dict_
 
-    def load_list(self, _I, count, offset=None):
+    def load_list(self, list_type: type[_I], count, offset=None) -> list[_I]:
         """Read and return a List instance with elements of type _I and
         a length of the count.
         """
-        list_ = []
+        list_: list[_I] = []
         offset = self.read_offset() if offset is None else offset
         if offset == 0 or count == 0:
             return []
         with self.temporary_seek(offset, io.SEEK_SET):
             while count > 0:
-                list_.append(self.__read_res_data(_I))
+                list_.append(self.__read_res_data(list_type))
                 count -= 1
             return list_
 
@@ -147,7 +145,7 @@ class ResFileLoader(bin_io.BinaryReader):
                 names[i] = self.read_string(encoding)
         return tuple(names)
 
-    def load_dict_values(self, _I: type[ResData], dict_offs=None, values_offs=None):
+    def load_dict_values(self, dict_type: type[_I], dict_offs=None, values_offs=None):
         """Read and return a ResDict instance with elements of type _I from
         the following offset or return an empty instance if the
         read offset is 0.
@@ -161,10 +159,10 @@ class ResFileLoader(bin_io.BinaryReader):
             return ResDict()
         with self.temporary_seek(dict_offs, io.SEEK_SET):
             dict_ = ResDict()
-            dict_.load(_I, self)
+            dict_.load(dict_type, self)
 
             keys = list(dict_.keys())
-            values = self.load_list(_I, len(dict_), values_offs)
+            values = self.load_list(dict_type, len(dict_), values_offs)
 
             dict_.clear()
             for i in range(len(keys)):
@@ -187,7 +185,7 @@ class ResFileLoader(bin_io.BinaryReader):
         """Read a BFRES signature consisting of 4 ASCII characters encoded as
         a UINT32 and checks for validity.
         """
-        signature = self.read_raw_string(4, "ascii")
+        signature = self.read_raw_string(len(valid_signature), "ascii")
         if signature != valid_signature:
             log.warning(
                 "Invalid signature, expected '%s' but got '%s' at position %d.",
@@ -235,9 +233,9 @@ class ResFileLoader(bin_io.BinaryReader):
 
     # Private Methods
 
-    def __read_res_data(self, _I: type[_I]) -> _I:
+    def __read_res_data(self, data_type: type[_I]) -> _I:
         offset = self.tell()
-        instance = _I()
+        instance = data_type()
         instance.load(self)
 
         existing_instance = self._data_map.get(offset)

@@ -5,6 +5,7 @@ import mathutils
 from bpy_extras.node_shader_utils import PrincipledBSDFWrapper, ShaderImageTextureWrapper
 
 from .bfrespy.common import ResString
+from .bfrespy.models.material import Material
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ TEXCOORD_SELECT = {
 }
 
 
-def import_material(fmat, texture_dict, name_prefix) -> bpy.types.Material:
+def import_material(fmat: Material, texture_dict, name_prefix) -> bpy.types.Material:
     """Import specified material from fmat."""
     mat = bpy.data.materials.new(name=name_prefix + fmat.name)
     mat.use_nodes = True
@@ -52,7 +53,8 @@ def import_material(fmat, texture_dict, name_prefix) -> bpy.types.Material:
             log.warning("Missing Texture: '%s'", tex_name)
             continue
 
-        tex_sampler_name = fmat.shader_assign.sampler_assigns.try_get_key(ResString(sampler))
+        tex_sampler_name = fmat.shader_assign.sampler_assigns.key_from_value(ResString(sampler))
+        log.debug(tex_sampler_name)
         i += 1
 
         # Get the bpy Texture Wrapper from the sampler name
