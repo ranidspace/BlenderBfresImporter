@@ -97,7 +97,7 @@ def dxt135_imageblock(data, blksrc, is_bc1):
     return color, bits
 
 
-def dxt5_alphablock(data, blksrc):
+def dxt5_alphablock(data, blksrc) -> bytes:
     alpha = bytearray(8)
     alpha[0] = data[blksrc]
     alpha[1] = data[blksrc + 1]
@@ -237,23 +237,50 @@ def decomp_bc4(data, width, height, snorm):
     return bytes(output)
 
 
-def decomp_bc5(data, width, height, snorm):
-    output = bytearray(2 * width * height)
-    np.empty([2, width * height], dtype="uint8")
+def vector_dxt5(blocks: np.ndarray[tuple[int, int, int], np.dtype], snorm):
+    dtype = np.int16 if snorm else np.uint16
+    work_blocks = blocks.astype(dtype)
 
+    range0 = np.arange(6, 0, -1, dtype=dtype)
+    range1 = np.arange(1, 7, dtype=dtype)
+
+    range2 = np.pad(np.arange(4, 0, -1, dtype=dtype), (0, 2))
+    range3 = np.pad(np.arange(1, 5, dtype=dtype), (0, 2))
+
+    last = np.array([0, 0xFF], dtype=dtype) if dtype == np.uint8 else np.array([-128, 127], dtype=dtype)
+
+    work_blocks[..., 2:8] = np.where(
+        work_blocks[..., 0, np.newaxis].repeat(6, axis=2) > work_blocks[..., 1, np.newaxis].repeat(6, axis=2),
+        (work_blocks[..., 0, np.newaxis] * range0 + work_blocks[..., 1, np.newaxis] * range1) // 7,
+        (work_blocks[..., 0, np.newaxis] * range2 + work_blocks[..., 1, np.newaxis] * range3) // 5,
+    )
+    work_blocks[..., 6:8] = np.where(
+        work_blocks[..., 0, np.newaxis].repeat(2, axis=2) > work_blocks[..., 1, np.newaxis].repeat(2, axis=2),
+        work_blocks[..., 6:8],
+        last,
+    )
+    return work_blocks.astype(blocks.dtype)
+
+
+def decomp_bc5(data, width, height, snorm):
     h = math.ceil(height / 4)
     w = math.ceil(width / 4)
 
+    dtype = np.int8 if snorm else np.uint8
+    output = np.empty((width * height, 2), dtype=dtype)
+    # For every block, 2 components (red and green), and 8 colours
+    blocks = np.empty((h * w, 2, 8), dtype=dtype)
+    blocks[:, 0, 0] = np.frombuffer(data[::16], dtype=dtype)
+    blocks[:, 0, 1] = np.frombuffer(data[1::16], dtype=dtype)
+    blocks[:, 1, 0] = np.frombuffer(data[8::16], dtype=dtype)
+    blocks[:, 1, 1] = np.frombuffer(data[9::16], dtype=dtype)
+
+    blocks = vector_dxt5(blocks, snorm)
+
     for y in range(h):
         for x in range(w):
-            blksrc = (y * w + x) * 16
-
-            if snorm:
-                red_block = dxt5_alphablock_signed(data, blksrc)
-                grn_block = dxt5_alphablock_signed(data, blksrc + 8)
-            else:
-                red_block = dxt5_alphablock(data, blksrc)
-                grn_block = dxt5_alphablock(data, blksrc + 8)
+            blockid = y * w + x
+            blksrc = blockid * 16
 
             red_select = int.from_bytes(data[blksrc + 2 : blksrc + 8], "little")
             grn_select = int.from_bytes(data[blksrc + 10 : blksrc + 16], "little")
@@ -263,12 +290,11 @@ def decomp_bc5(data, width, height, snorm):
             for ty in range(th):
                 for tx in range(tw):
                     shift = ty * 12 + tx * 3  # the position times three
-                    ooffs = ((y * 4 + ty) * width + (x * 4 + tx)) * 2
-                    if snorm:
-                        output[ooffs] = to_signed_8(red_block[(red_select >> shift) & 7]) + 0x80
-                        output[ooffs + 1] = to_signed_8(grn_block[(grn_select >> shift) & 7]) + 0x80
-                    else:
-                        output[ooffs] = red_block[(red_select >> shift) & 7]
-                        output[ooffs + 1] = grn_block[(grn_select >> shift) & 7]
+                    ooffs = ((y * 4 + ty) * width + (x * 4 + tx))
 
-    return bytes(output)
+                    output[ooffs, 0] = blocks[blockid, 0, (red_select >> shift) & 7]
+                    output[ooffs, 1] = blocks[blockid, 1, (grn_select >> shift) & 7]
+
+    if snorm:
+        output = (output + 0x80).astype(np.uint8)
+    return output.astype(np.uint8).tobytes()

@@ -11,11 +11,12 @@ def import_textures(bntx, operator):
     images = {}
     for i, tex in enumerate(bntx.nx.textures):
         log.info(
-            "Importing texture %3d/%3d '%s' (%s)...",
+            "Importing texture %3d/%3d '%s' (%s, %s)...",
             i + 1,
             len(bntx.nx.textures),
             tex.name,
             type(tex.format_).__name__,
+            tex.fmt_dtype.name,
         )
         float_buffer = False
         isdata = not bool(tex.fmt_dtype.name == "SRGB")
