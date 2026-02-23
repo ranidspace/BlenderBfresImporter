@@ -208,33 +208,29 @@ def decomp_dxt55(data, width, height):
 
 
 def decomp_bc4(data, width, height, snorm):
-    output = bytearray(width * height)
     h = math.ceil(height / 4)
     w = math.ceil(width / 4)
 
-    for y in range(h):
-        for x in range(w):
-            blksrc = (y * w + x) * 8
-            if snorm:
-                alpha_block = dxt5_alphablock_signed(data, blksrc)
+    dtype = np.int8 if snorm else np.uint8
 
-            else:
-                alpha_block = dxt5_alphablock(data, blksrc)
+    blocks = np.empty((h * w, 8), dtype=dtype)
+    blocks[:, 0] = np.frombuffer(data[::8], dtype=dtype)
+    blocks[:, 1] = np.frombuffer(data[1::8], dtype=dtype)
 
-            alpha_select = int.from_bytes(data[blksrc + 2 : blksrc + 8], "little")
+    blocks = vector_dxt5(blocks, snorm)
 
-            tw = min(width - x * 4, 4)
-            th = min(height - y * 4, 4)
-            for ty in range(th):
-                for tx in range(tw):
-                    shift = ty * 12 + tx * 3  # the position times three
-                    ooffs = (y * 4 + ty) * width + (x * 4 + tx)
-                    if snorm:
-                        output[ooffs] = to_signed_8(alpha_block[(alpha_select >> shift) & 7]) + 0x80
-                    else:
-                        output[ooffs] = alpha_block[(alpha_select >> shift) & 7]
+    outblocks = np.empty((w * h, 16), dtype=dtype)
+    shift = np.arange(0, 48, 3, dtype=dtype)
 
-    return bytes(output)
+    select = np.frombuffer(data, dtype="<i8") >> 16
+
+    row_indices = np.arange(blocks.shape[0])[:, np.newaxis]
+    outblocks = blocks[row_indices, (select[..., np.newaxis] >> shift) & 7]
+    outblocks = outblocks.reshape(w, h, 4, 4).swapaxes(1, 2).reshape(w * 4, h * 4)
+
+    if snorm:
+        outblocks = (outblocks + 0x80).astype(np.uint8)
+    return outblocks[:width, :height].tobytes()
 
 
 def vector_dxt5(blocks: np.ndarray[tuple[int, int, int], np.dtype], snorm):
@@ -247,15 +243,15 @@ def vector_dxt5(blocks: np.ndarray[tuple[int, int, int], np.dtype], snorm):
     range2 = np.pad(np.arange(4, 0, -1, dtype=dtype), (0, 2))
     range3 = np.pad(np.arange(1, 5, dtype=dtype), (0, 2))
 
-    last = np.array([0, 0xFF], dtype=dtype) if dtype == np.uint8 else np.array([-128, 127], dtype=dtype)
+    last = np.array([-128, 127], dtype=dtype) if snorm else np.array([0, 0xFF], dtype=dtype)
 
     work_blocks[..., 2:8] = np.where(
-        work_blocks[..., 0, np.newaxis].repeat(6, axis=2) > work_blocks[..., 1, np.newaxis].repeat(6, axis=2),
+        work_blocks[..., 0, np.newaxis].repeat(6, axis=-1) > work_blocks[..., 1, np.newaxis].repeat(6, axis=-1),
         (work_blocks[..., 0, np.newaxis] * range0 + work_blocks[..., 1, np.newaxis] * range1) // 7,
         (work_blocks[..., 0, np.newaxis] * range2 + work_blocks[..., 1, np.newaxis] * range3) // 5,
     )
     work_blocks[..., 6:8] = np.where(
-        work_blocks[..., 0, np.newaxis].repeat(2, axis=2) > work_blocks[..., 1, np.newaxis].repeat(2, axis=2),
+        work_blocks[..., 0, np.newaxis].repeat(2, axis=-1) > work_blocks[..., 1, np.newaxis].repeat(2, axis=-1),
         work_blocks[..., 6:8],
         last,
     )
@@ -267,9 +263,8 @@ def decomp_bc5(data, width, height, snorm):
     w = math.ceil(width / 4)
 
     dtype = np.int8 if snorm else np.uint8
-    output = np.empty((width * height, 2), dtype=dtype)
     # For every block, 2 components (red and green), and 8 colours
-    blocks = np.empty((h * w, 2, 8), dtype=dtype)
+    blocks = np.empty((w * h, 2, 8), dtype=dtype)
     blocks[:, 0, 0] = np.frombuffer(data[::16], dtype=dtype)
     blocks[:, 0, 1] = np.frombuffer(data[1::16], dtype=dtype)
     blocks[:, 1, 0] = np.frombuffer(data[8::16], dtype=dtype)
@@ -277,24 +272,17 @@ def decomp_bc5(data, width, height, snorm):
 
     blocks = vector_dxt5(blocks, snorm)
 
-    for y in range(h):
-        for x in range(w):
-            blockid = y * w + x
-            blksrc = blockid * 16
+    outblocks = np.empty((w * h, 16, 2), dtype=dtype)
+    shift = np.arange(0, 48, 3, dtype=dtype)
 
-            red_select = int.from_bytes(data[blksrc + 2 : blksrc + 8], "little")
-            grn_select = int.from_bytes(data[blksrc + 10 : blksrc + 16], "little")
+    select = np.frombuffer(data, dtype="<i8").reshape(w * h, 2) >> 16
 
-            tw = min(width - x * 4, 4)
-            th = min(height - y * 4, 4)
-            for ty in range(th):
-                for tx in range(tw):
-                    shift = ty * 12 + tx * 3  # the position times three
-                    ooffs = ((y * 4 + ty) * width + (x * 4 + tx))
-
-                    output[ooffs, 0] = blocks[blockid, 0, (red_select >> shift) & 7]
-                    output[ooffs, 1] = blocks[blockid, 1, (grn_select >> shift) & 7]
+    # jesus christ
+    row_indices = np.arange(blocks.shape[0])[:, np.newaxis]
+    outblocks[..., 0] = blocks[row_indices, 0, (select[..., 0, np.newaxis] >> shift) & 7]
+    outblocks[..., 1] = blocks[row_indices, 1, (select[..., 1, np.newaxis] >> shift) & 7]
+    outblocks = outblocks.reshape(w, h, 4, 4, 2).swapaxes(1, 2).reshape(w * 4, h * 4, 2)
 
     if snorm:
-        output = (output + 0x80).astype(np.uint8)
-    return output.astype(np.uint8).tobytes()
+        outblocks = (outblocks + 0x80).astype(np.uint8)
+    return outblocks[:width, :height].tobytes()
