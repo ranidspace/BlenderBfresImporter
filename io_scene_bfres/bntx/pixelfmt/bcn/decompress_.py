@@ -1,210 +1,141 @@
-# BC3 Compressor/Decompressor
-# Version 0.1
-# Copyright © 2018 MasterVermilli0n / AboodXD
+# This file is inspired by many different libraries, including the python "pillow" module, the rust "block_compression"
+# crate, the implementation in Switch Toolbox.
+from __future__ import annotations
 
-# decompress_.py
-# A BC3/DXT5 decompressor in Python based on libtxc_dxtn.
-
-################################################################
-################################################################
 import math
-import struct
 
 import numpy as np
+import numpy.typing as npt
 
 
-def to_signed_8(v):
-    if v > 255:
-        return -1
+def vector_decode_c01(arr: npt.NDArray[np.uint16]) -> npt.NDArray[np.uint32]:
+    # R[15:11] G[10:5] B[4:0]
+    # OFFTOPIC: Did you know the human eye is more sensitive to green? Which is why it gets the extra bit here
+    rgb565 = np.dstack(((arr >> 11) & 0x1F, (arr >> 5) & 0x3F, arr & 0x001F, np.full(arr.shape, 0xFF, dtype=int)))
+    rgb888 = rgb565.astype(np.uint32)
 
-    if v < 0:
-        return 0
-
-    if v > 127:
-        return v - 256
-
-    return v
+    rgb888[..., 0::2] = (rgb888[..., 0::2] * 527 + 23) >> 6
+    rgb888[..., 1] = (rgb888[..., 1] * 259 + 33) >> 6
+    return rgb888
 
 
-def to_unsigned_8(v):
-    if v > 127:
-        return 127
+def vector_decode_c23(
+    reference: npt.NDArray[np.uint16],
+    colors: npt.NDArray[np.uint32],
+    not_bc1: bool,
+) -> npt.NDArray[np.uint8]:
 
-    if v < -128:
-        return 128
+    c0 = reference[..., 0, np.newaxis].repeat(4, axis=-1)
+    c1 = reference[..., 1, np.newaxis].repeat(4, axis=-1)
 
-    if v < 0:
-        return v + 256
+    # c2
+    c2 = np.where(
+        not_bc1 | (c0 > c1),
+        (2 * colors[..., 0, :] + colors[..., 1, :]) // 3,
+        (colors[..., 0, :] + colors[..., 1, :]) // 2,
+    )
+    c2[..., 3] = 0xFF
 
-    return v
+    # c3
+    c3 = np.where(not_bc1 | (c0 > c1), (colors[..., 0, :] + 2 * colors[..., 1, :]) // 3, 0)
+    c3[..., 3] = np.where(not_bc1 | (reference[..., 0] > reference[..., 1]), 0xFF, 0x00)
 
-
-def decode_rgb565(col):
-    output = bytearray(4)
-    b = ((col >> 0) & 0x1F) << 3
-    g = ((col >> 5) & 0x3F) << 2
-    r = ((col >> 11) & 0x1F) << 3
-
-    output[0] = r | r >> 5
-    output[1] = g | g >> 5
-    output[2] = b | b >> 5  # the leftmost bit gets ORd to the rightmost bit?
-    output[3] = 0xFF
-
-    return bytes(output)
+    return np.hstack((colors, c2[:, np.newaxis, :], c3[:, np.newaxis, :])).astype(np.uint8)
 
 
-def c2_decode(color, c0, c1, is_bc1):
-    output = bytearray(4)
-    if c0 > c1 or not is_bc1:
-        output[0] = (color[0][0] * 2 + color[1][0]) // 3
-        output[1] = (color[0][1] * 2 + color[1][1]) // 3
-        output[2] = (color[0][2] * 2 + color[1][2]) // 3
+def decode_color_blocks(blocks: npt.NDArray, not_bc1: bool):
+    colors = vector_decode_c01(blocks["ref_col"])
+    colors = vector_decode_c23(blocks["ref_col"], colors, not_bc1)
 
+    shift = np.arange(0, 32, 2, dtype=np.uint8)
+    row_indices = np.arange(blocks.shape[0])[:, np.newaxis]
+    return colors[row_indices, (blocks["idx_bits"][..., np.newaxis] >> shift) & 3]
+
+
+def decode_alpha_blocks(blocks: npt.NDArray, snorm: bool) -> npt.NDArray[np.float32]:
+    work_blocks = blocks.astype(np.float32)
+    if snorm:
+        work_blocks = np.where(work_blocks == -128.0, -1.0, work_blocks / 127.0)
     else:
-        output[0] = (color[0][0] + color[1][0]) // 2
-        output[1] = (color[0][1] + color[1][1]) // 2
-        output[2] = (color[0][2] + color[1][2]) // 2
-    output[3] = 0xFF
-    color[2] = bytes(output)
+        work_blocks /= 255.0
+
+    range0 = np.arange(6.0, 0.0, -1.0)
+    range1 = np.arange(1.0, 7.0)
+
+    range2 = np.pad(np.arange(4.0, 0.0, -1.0), (0, 2))
+    range3 = np.pad(np.arange(1.0, 5.0), (0, 2))
+
+    last = np.array([-1.0, 1.0]) if snorm else np.array([0.0, 1.0])
+
+    work_blocks = np.concatenate(
+        (
+            work_blocks,
+            np.where(
+                work_blocks[..., 0, np.newaxis].repeat(6, axis=-1) > work_blocks[..., 1, np.newaxis].repeat(6, axis=-1),
+                (work_blocks[..., 0, np.newaxis] * range0 + work_blocks[..., 1, np.newaxis] * range1) / 7.0,
+                (work_blocks[..., 0, np.newaxis] * range2 + work_blocks[..., 1, np.newaxis] * range3) / 5.0,
+            ),
+        ),
+        axis=-1,
+    )
+    work_blocks[..., 6:8] = np.where(
+        work_blocks[..., 0, np.newaxis].repeat(2, axis=-1) > work_blocks[..., 1, np.newaxis].repeat(2, axis=-1),
+        work_blocks[..., 6:8],
+        last,
+    )
+    return work_blocks
 
 
-def c3_decode(color, c0, c1, is_bc1):
-    output = bytearray(4)
-    if c0 > c1 or not is_bc1:
-        output[0] = (color[0][0] + color[1][0] * 2) // 3
-        output[1] = (color[0][1] + color[1][1] * 2) // 3
-        output[2] = (color[0][2] + color[1][2] * 2) // 3
-        output[3] = 0xFF
-        color[3] = bytes(output)
-    else:
-        color[3] = b"\x00\x00\x00\x00"
-
-
-def exp4to8(col):
-    return col | col << 4
-
-
-def dxt135_imageblock(data, blksrc, is_bc1):
-    color = [b""] * 4
-    c0 = struct.unpack_from("<H", data, blksrc)[0]
-    c1 = struct.unpack_from("<H", data, blksrc + 2)[0]
-    bits = struct.unpack_from("<I", data, blksrc + 4)[0]
-    color[0] = decode_rgb565(c0)
-    color[1] = decode_rgb565(c1)
-
-    c2_decode(color, c0, c1, is_bc1)
-    c3_decode(color, c0, c1, is_bc1)
-    return color, bits
-
-
-def dxt5_alphablock(data, blksrc) -> bytes:
-    alpha = bytearray(8)
-    alpha[0] = data[blksrc]
-    alpha[1] = data[blksrc + 1]
-    if alpha[0] > alpha[1]:
-        for i in range(2, 8):
-            alpha[i] = (alpha[0] * (8 - i) + (alpha[1] * (i - 1))) // 7
-    else:
-        for i in range(2, 6):
-            alpha[i] = (alpha[0] * (6 - i) + (alpha[1] * (i - 1))) // 5
-        alpha[6] = 0x00
-        alpha[7] = 0xFF
-    return bytes(alpha)
-
-
-def dxt5_alphablock_signed(data, blksrc):
-    alpha = bytearray(8)
-    alpha[0] = data[blksrc]
-    alpha[1] = data[blksrc + 1]
-    alpha_0 = to_signed_8(alpha[0])
-    alpha_1 = to_signed_8(alpha[1])
-    if alpha_0 > alpha_1:
-        for i in range(2, 8):
-            alpha[i] = to_unsigned_8((alpha_0 * (8 - i) + alpha_1 * (i - 1)) // 7)
-    else:
-        for i in range(2, 6):
-            alpha[i] = to_unsigned_8((alpha_0 * (6 - i) + alpha_1 * (i - 1)) // 5)
-        alpha[6] = 0x80
-        alpha[7] = 0x7F
-    return bytes(alpha)
-
-
-def decomp_dxt51(data, width, height):
-    output = bytearray(width * height * 4)
+def decomp_bc1(data, width, height):
     h = math.ceil(height / 4)
     w = math.ceil(width / 4)
 
-    for y in range(h):
-        for x in range(w):
-            blksrc = (y * w + x) * 8
-            shift = 0
-            rgba, bits = dxt135_imageblock(data, blksrc, 1)
+    dt = np.dtype({"names": ["ref_col", "idx_bits"], "formats": ["2<u2", "<u4"]})
+    blocks = np.frombuffer(data, dtype=dt)
 
-            tw = min(width - x * 4, 4)
-            th = min(height - y * 4, 4)
-            for ty in range(th):
-                for tx in range(tw):
-                    pos = ((y * 4 + ty) * width + (x * 4 + tx)) * 4
-                    idx = bits >> shift & 3
+    outblocks = decode_color_blocks(blocks, not_bc1=False)
+    outblocks = outblocks.reshape(h, w, 4, 4, 4).swapaxes(1, 2).reshape(h * 4, w * 4, 4)
 
-                    shift += 2
-                    output[pos : pos + 4] = rgba[idx]
-
-    return bytes(output)
+    return outblocks[:height, :width]
 
 
-def decomp_dxt53(data, width, height):
-    # XXX Untested code, dont know any models which use BC2 textures
-    output = bytearray(width * height * 4)
+def decomp_bc2(data, width, height):
+    # XXX: Untested code, dont know any models which use BC2 textures
     h = math.ceil(height / 4)
     w = math.ceil(width / 4)
 
-    for y in range(h):
-        for x in range(w):
-            blksrc = (y * w + x) * 16
-            rgba, bits = dxt135_imageblock(data, blksrc + 8, 0)
+    dt = np.dtype({"names": ["alphadata", "ref_col", "idx_bits"], "formats": ["<u8", "2<u2", "<u4"]})
+    blocks = np.frombuffer(data, dtype=dt)
 
-            shift = 0
-            for ty in range(4):
-                for tx in range(4):
-                    anibble = (data[blksrc + (ty * 4 + tx) // 2] >> (4 * (tx & 1))) & 0xF
+    outblocks = decode_color_blocks(blocks, not_bc1=True)
 
-                    pos = ((y * 4 + ty) * width + (x * 4 + tx)) * 4
-                    idx = bits >> shift & 3
+    shift = np.arange(0, 64, 4, dtype=np.uint8)
+    outblocks[..., 3] = ((blocks["alphadata"][..., np.newaxis, :] >> shift) & 0xF) * 17
+    outblocks = outblocks.reshape(h, w, 4, 4, 4).swapaxes(1, 2).reshape(h * 4, w * 4, 4)
 
-                    shift += 2
-                    pixel = rgba[idx]
-                    pixel[3] = exp4to8(anibble)
-
-                    output[pos : pos + 4] = pixel
-
-    return bytes(output)
+    return outblocks[:height, :width]
 
 
-def decomp_dxt55(data, width, height):
-    # XXX Untested code, dont know any models which use BC3 textures
-    output = bytearray(width * height * 4)
+def decomp_bc3(data, width, height):
     h = math.ceil(height / 4)
     w = math.ceil(width / 4)
 
-    for y in range(h):
-        for x in range(w):
-            blksrc = (y * w + x) * 16
-            tile, bits = dxt135_imageblock(data, blksrc + 8, 0)
-            alpha_block = dxt5_alphablock(data, blksrc)
-            alpha_select = int.from_bytes(data[blksrc + 2 : blksrc + 8], "little")
+    dt = np.dtype({"names": ["alphadata", "ref_col", "idx_bits"], "formats": ["<u8", "2<u2", "<u4"]})
+    blocks = np.frombuffer(data, dtype=dt)
 
-            idx_shift = 0
-            for ty in range(4):
-                for tx in range(4):
-                    ooffs = ((y * 4 + ty) * width + (x * 4 + tx)) * 4
-                    idx = bits >> idx_shift & 3
+    col_blocks = decode_color_blocks(blocks, not_bc1=True).astype(np.float32) / 255.0
+    alpha_select = blocks["alphadata"] >> 16
 
-                    idx_shift += 2
-                    output[ooffs : ooffs + 3] = tile[idx][0:3]
-                    output[ooffs + 3] = alpha_block[(alpha_select >> (ty * 12 + tx * 3)) & 7]
+    alpha_blocks = np.stack((blocks["alphadata"] & 0xFF, (blocks["alphadata"] >> 8) & 0xFF), axis=-1)
+    alpha_blocks = decode_alpha_blocks(alpha_blocks, snorm=False)
 
-    return bytes(output)
+    shift = np.arange(0, 48, 3, dtype=np.uint8)
+    row_indices = np.arange(alpha_blocks.shape[0])[:, np.newaxis]
+    col_blocks[..., 3] = alpha_blocks[row_indices, (alpha_select[..., np.newaxis] >> shift) & 7]
+
+    col_blocks = col_blocks.reshape(h, w, 4, 4, 4).swapaxes(1, 2).reshape(h * 4, w * 4, 4)
+
+    return col_blocks[:height, :width]
 
 
 def decomp_bc4(data, width, height, snorm):
@@ -213,66 +144,37 @@ def decomp_bc4(data, width, height, snorm):
 
     dtype = np.int8 if snorm else np.uint8
 
-    blocks = np.empty((h * w, 8), dtype=dtype)
-    blocks[:, 0] = np.frombuffer(data[::8], dtype=dtype)
-    blocks[:, 1] = np.frombuffer(data[1::8], dtype=dtype)
+    blocks = np.stack((np.frombuffer(data[::8], dtype=dtype), np.frombuffer(data[1::8], dtype=dtype)), axis=-1)
 
-    blocks = vector_dxt5(blocks, snorm)
+    blocks = decode_alpha_blocks(blocks, snorm)
 
-    outblocks = np.empty((w * h, 16), dtype=dtype)
+    outblocks = np.empty((w * h, 16), dtype=np.float32)
     shift = np.arange(0, 48, 3, dtype=dtype)
 
-    select = np.frombuffer(data, dtype="<i8") >> 16
+    select = np.frombuffer(data, dtype="<u8") >> 16
 
     row_indices = np.arange(blocks.shape[0])[:, np.newaxis]
     outblocks = blocks[row_indices, (select[..., np.newaxis] >> shift) & 7]
-    outblocks = outblocks.reshape(w, h, 4, 4).swapaxes(1, 2).reshape(w * 4, h * 4)
+    outblocks = outblocks.reshape(h, w, 4, 4).swapaxes(1, 2).reshape(h * 4, w * 4)
 
-    if snorm:
-        outblocks = (outblocks + 0x80).astype(np.uint8)
-    return outblocks[:width, :height].tobytes()
+    return outblocks[:height, :width]
 
 
-def vector_dxt5(blocks: np.ndarray[tuple[int, int, int], np.dtype], snorm):
-    dtype = np.int16 if snorm else np.uint16
-    work_blocks = blocks.astype(dtype)
-
-    range0 = np.arange(6, 0, -1, dtype=dtype)
-    range1 = np.arange(1, 7, dtype=dtype)
-
-    range2 = np.pad(np.arange(4, 0, -1, dtype=dtype), (0, 2))
-    range3 = np.pad(np.arange(1, 5, dtype=dtype), (0, 2))
-
-    last = np.array([-128, 127], dtype=dtype) if snorm else np.array([0, 0xFF], dtype=dtype)
-
-    work_blocks[..., 2:8] = np.where(
-        work_blocks[..., 0, np.newaxis].repeat(6, axis=-1) > work_blocks[..., 1, np.newaxis].repeat(6, axis=-1),
-        (work_blocks[..., 0, np.newaxis] * range0 + work_blocks[..., 1, np.newaxis] * range1) // 7,
-        (work_blocks[..., 0, np.newaxis] * range2 + work_blocks[..., 1, np.newaxis] * range3) // 5,
-    )
-    work_blocks[..., 6:8] = np.where(
-        work_blocks[..., 0, np.newaxis].repeat(2, axis=-1) > work_blocks[..., 1, np.newaxis].repeat(2, axis=-1),
-        work_blocks[..., 6:8],
-        last,
-    )
-    return work_blocks.astype(blocks.dtype)
-
-
-def decomp_bc5(data, width, height, snorm):
+def decomp_bc5(data, width, height, snorm) -> npt.NDArray[np.int8]:
     h = math.ceil(height / 4)
     w = math.ceil(width / 4)
 
     dtype = np.int8 if snorm else np.uint8
     # For every block, 2 components (red and green), and 8 colours
-    blocks = np.empty((w * h, 2, 8), dtype=dtype)
+    blocks = np.empty((w * h, 2, 2), dtype=dtype)
     blocks[:, 0, 0] = np.frombuffer(data[::16], dtype=dtype)
     blocks[:, 0, 1] = np.frombuffer(data[1::16], dtype=dtype)
     blocks[:, 1, 0] = np.frombuffer(data[8::16], dtype=dtype)
     blocks[:, 1, 1] = np.frombuffer(data[9::16], dtype=dtype)
 
-    blocks = vector_dxt5(blocks, snorm)
+    blocks = decode_alpha_blocks(blocks, snorm)
 
-    outblocks = np.empty((w * h, 16, 2), dtype=dtype)
+    outblocks = np.empty((w * h, 16, 2), dtype=np.float32)
     shift = np.arange(0, 48, 3, dtype=dtype)
 
     select = np.frombuffer(data, dtype="<i8").reshape(w * h, 2) >> 16
@@ -281,8 +183,8 @@ def decomp_bc5(data, width, height, snorm):
     row_indices = np.arange(blocks.shape[0])[:, np.newaxis]
     outblocks[..., 0] = blocks[row_indices, 0, (select[..., 0, np.newaxis] >> shift) & 7]
     outblocks[..., 1] = blocks[row_indices, 1, (select[..., 1, np.newaxis] >> shift) & 7]
-    outblocks = outblocks.reshape(w, h, 4, 4, 2).swapaxes(1, 2).reshape(w * 4, h * 4, 2)
+    outblocks = outblocks.reshape(h, w, 4, 4, 2).swapaxes(1, 2).reshape(h * 4, w * 4, 2)
 
-    if snorm:
-        outblocks = (outblocks + 0x80).astype(np.uint8)
-    return outblocks[:width, :height].tobytes()
+    if not snorm:
+        outblocks = outblocks * 2.0 - 1.0
+    return outblocks[:height, :width]
