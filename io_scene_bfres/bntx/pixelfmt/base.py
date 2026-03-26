@@ -95,7 +95,7 @@ class TextureFormat:
 
     @staticmethod
     def decodepixels(data):
-        return np.frombuffer(data, dtype="B") / 255
+        return np.frombuffer(data, dtype="B") / 255.0
 
     def __str__(self):
         return f"<TextureFormat '{type(self).__name__}' at {id(self)}>"

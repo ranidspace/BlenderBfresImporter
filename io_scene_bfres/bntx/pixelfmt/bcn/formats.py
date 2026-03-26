@@ -12,6 +12,7 @@ import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
+import numpy.typing as npt
 
 from ..base import TextureFormat
 from . import decompress_
@@ -37,7 +38,11 @@ class BC1(TextureFormat):
             return b""
 
         data = data[:csize]
-        return decompress_.decomp_dxt51(data, width, height)
+        return decompress_.decomp_bc1(data, width, height)
+
+    @staticmethod
+    def decodepixels(data: npt.NDArray[np.uint8]):
+        return data / 255.0
 
 
 class BC2(TextureFormat):
@@ -56,7 +61,11 @@ class BC2(TextureFormat):
             return b""
 
         data = data[:csize]
-        return decompress_.decomp_dxt53(data, width, height)
+        return decompress_.decomp_bc2(data, width, height)
+
+    @staticmethod
+    def decodepixels(data: npt.NDArray[np.uint8]):
+        return data / 255.0
 
 
 class BC3(TextureFormat):
@@ -75,7 +84,11 @@ class BC3(TextureFormat):
             return b""
 
         data = data[:csize]
-        return decompress_.decomp_dxt55(data, width, height)
+        return decompress_.decomp_bc3(data, width, height)
+
+    @staticmethod
+    def decodepixels(data: npt.NDArray[np.uint8]):
+        return data
 
 
 class BC4(TextureFormat):
@@ -97,12 +110,11 @@ class BC4(TextureFormat):
         data = data[:csize]
         return decompress_.decomp_bc4(data, width, height, snorm)
 
+    # NOTE: Blender images seem to need all 4 channels
     @staticmethod
-    def decodepixels(data):
-        rgba = np.empty(len(data) * 4)
-        rgba[0::4] = rgba[1::4] = rgba[2::4] = np.frombuffer(data, dtype="B") / 255
-        rgba[3::4] = 1
-        return rgba
+    def decodepixels(data: npt.NDArray[np.float32]):
+        data = data[..., np.newaxis].repeat(3, axis=-1)
+        return np.dstack((data, np.ones(data.shape[0:2])[..., np.newaxis]))
 
 
 class BC5(TextureFormat):
@@ -124,16 +136,15 @@ class BC5(TextureFormat):
         data = data[:csize]
         return decompress_.decomp_bc5(data, width, height, snorm)
 
+    # NOTE: Blender images seem to need all 4 channels
     @staticmethod
-    def decodepixels(data):
-        r = np.frombuffer(data[0::2], dtype=np.uint8).astype(np.float32) / 255
-        g = np.frombuffer(data[1::2], dtype=np.uint8).astype(np.float32) / 255
-        x = r * 2 - 1
-        y = g * 2 - 1
-        z = abs(1 - x**2 - y**2) ** 0.5
-        rgba = np.empty(len(data) * 2, dtype=np.float32)
-        rgba[0::4] = r
-        rgba[1::4] = g
-        rgba[2::4] = np.real((z + 1) * 0.5)
-        rgba[3::4] = 1
-        return rgba
+    def decodepixels(data: npt.NDArray[np.float32]):
+        data = np.dstack(
+            (
+                data,
+                np.real(np.sqrt(abs(1 - data[..., 0] ** 2 - data[..., 1])))[..., np.newaxis],
+                np.ones(data.shape[0:2]),
+            ),
+        )
+
+        return data + 1.0 / 2.0
