@@ -28,28 +28,25 @@ class Decimal10x5:
     _N = 5
     """Number of fractional part bits."""
 
-    def __init__(self, value: float, raw=False):
-        # Raw reads a Decimal10x5 by it's raw bit represetation
-        if not raw:
-            if type(value) is int:
-                Decimal10x5(value << self._N, raw=True)
-            elif type(value) is float:
-                Decimal10x5(round(value * (1 << self._N)), raw=True)
+    def __init__(self, value: int):
+        # unchecked for overflow, but all python ints are.
+        self.raw: int = value
 
-        # When raw is false, it converts an int into Decimal10x5
-        elif type(value) is int:
-            # unchecked for overflow, but all python ints are.
-            self.raw: int = value
+    def from_num(self, value: float):
+        if isinstance(value, int):
+            Decimal10x5(value << self._N)
+        elif isinstance(value, float):
+            Decimal10x5(round(value * (1 << self._N)))
 
     # These are meant to be constants but python doesnt allow referencing the
     # class inside of itself
     @classmethod
     def MAX_VALUE(cls):
-        return Decimal10x5(0xFFFF, raw=True)
+        return Decimal10x5(0xFFFF)
 
     @classmethod
     def MIN_VALUE(cls):
-        return Decimal10x5(0x0000, raw=True)
+        return Decimal10x5(0x0000)
 
     def __hash__(self):
         return self.raw
@@ -58,35 +55,33 @@ class Decimal10x5:
         return self
 
     def __eq__(self, value: object) -> bool:
-        if type(value) is not Decimal10x5:
+        if not isinstance(value, Decimal10x5):
             return False
         return self.raw == value.raw
 
     def __neg__(self):
-        return Decimal10x5(-self.raw, raw=True)
+        return Decimal10x5(-self.raw)
 
     def __add__(self, other: Decimal10x5):
-        return Decimal10x5(self.raw + other.raw, raw=True)
+        return Decimal10x5(self.raw + other.raw)
 
     def __sub__(self, other: Decimal10x5):
-        return Decimal10x5(self.raw - other.raw, raw=True)
+        return Decimal10x5(self.raw - other.raw)
 
     def __mul__(self, other: int | Decimal10x5):
-        if type(other) is Decimal10x5:
+        if isinstance(other, int):
+            return Decimal10x5(self.raw * other)
+        if isinstance(other, Decimal10x5):
             k = 1 << (self._N - 1)
-            return Decimal10x5((self.raw * other.raw + k) >> self._N, raw=True)
-        elif other is int:
-            return Decimal10x5(self.raw * other, raw=True)
-        else:
-            raise TypeError("Decimal10x5 can only be multiplied by int or itself")
+            return Decimal10x5((self.raw * other.raw + k) >> self._N)
+        raise TypeError("Decimal10x5 can only be multiplied by int or itself")
 
     def __truediv__(self, other: int | Decimal10x5):
         if type(other) is Decimal10x5:
-            return Decimal10x5((self.raw << self._N) // other.raw, raw=True)
-        elif other is int:
-            return Decimal10x5(self.raw // other, raw=True)
-        else:
-            raise TypeError("Decimal10x5 can only be divided by int or itself")
+            return Decimal10x5((self.raw << self._N) // other.raw)
+        if isinstance(other, int):
+            return Decimal10x5(self.raw // other)
+        raise TypeError("Decimal10x5 can only be divided by int or itself")
 
     def __floordiv__(self, other: int | Decimal10x5):
         return self / other  # defined by truediv
@@ -523,16 +518,16 @@ class UserData(core.ResData):
         return self._value
 
     def set_value(self, value, as_unicode=False):
-        if type(value) is bytes | bytearray:
+        if isinstance(value, (bytes, bytearray)):
             self.type = UserDataType.BYTE
             self._value = value
         elif len(value) == 0 or type(value[0]) is int:
             self.type = UserDataType.INT32
             self._value = value
-        elif type(value[0]) is float:
+        elif isinstance(value[0], float):
             self.type = UserDataType.SINGLE
             self._value = value
-        elif type(value[0]) is str:
+        elif isinstance(value[0], str):
             self.type = UserDataType.WString if as_unicode else UserDataType.STRING
             self._value = value
         else:

@@ -28,8 +28,8 @@ class ResFile(ResData):
         MESH_CODEC_RESAVE = 1 << 7
 
     def __init__(self, stream: io.BytesIO | io.BufferedReader):
-        """Initializes a new instance of the ResFile class from a stream"""
-        self.external_flag: "ResFile.ExternalFlags"
+        """Initialize a new instance of the ResFile class from a stream"""
+        self.external_flag: ResFile.ExternalFlags
 
         self.is_platform_switch: bool
 
@@ -70,7 +70,8 @@ class ResFile(ResData):
 
     # Public Methods
 
-    def is_switch_binary(self, stream):
+    @staticmethod
+    def is_switch_binary(stream):
         stream.seek(4, io.SEEK_SET)
         padding_check = struct.unpack("<I", stream.read(4))[0]
         stream.seek(0, io.SEEK_SET)
@@ -83,8 +84,7 @@ class ResFile(ResData):
     def data_alignment(self):
         if self.is_platform_switch:
             return 1 << int(self.alignment)
-        else:
-            return self.alignment
+        return self.alignment
 
     @data_alignment.setter
     def data_alignment(self, value):
@@ -105,7 +105,8 @@ class ResFile(ResData):
         self.version_minor = version >> 8 & 0xFF
         self.version_minor2 = version & 0xFF
 
-    def has_flag(self, value, flag):
+    @staticmethod
+    def has_flag(value, flag):
         return value & flag == flag
 
     # Methods

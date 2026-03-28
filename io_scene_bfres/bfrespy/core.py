@@ -9,6 +9,7 @@ from . import binary_io as bin_io
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
     from .common import ResDict
 
 
@@ -35,9 +36,7 @@ log = logging.getLogger(__name__)
 class ResFileLoader(bin_io.BinaryReader):
     """Load the hierachy and data of a Bfres ResFile"""
 
-    def __init__(
-        self, res_file, stream: io.BytesIO | io.BufferedReader, res_data: ResData | None = None
-    ):
+    def __init__(self, res_file, stream: io.BytesIO | io.BufferedReader, res_data: ResData | None = None):
         super().__init__(stream)
         self.res_file = res_file
         self._data_map = {}

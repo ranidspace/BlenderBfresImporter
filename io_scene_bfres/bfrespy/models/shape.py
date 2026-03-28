@@ -4,7 +4,7 @@ from enum import IntEnum, IntFlag
 from ..common import Buffer, ResDict
 from ..core import ResData, ResFileLoader
 from ..gx2 import GX2IndexFormat, GX2PrimitiveType
-from ..switch.memory_pool import BufferTextureViewInfo, BufferInfo, MemoryPool
+from ..switch.memory_pool import BufferInfo, BufferTextureViewInfo, MemoryPool
 from .vertex_buffer_attrib import VertexBuffer
 
 
@@ -24,7 +24,7 @@ class Shape(ResData):
         self.vtx_skin_count = 0
         self.target_attrib_count = 0
         self.meshes: list[Mesh] = []
-        self.skin_bone_idxs = tuple()
+        self.skin_bone_idxs = ()
         self.key_shapes: ResDict[KeyShape] = ResDict()
         self.submesh_boundings: list[Bounding] = []
         self.submesh_bounding_nodes: list[BoundingNode] = []

@@ -159,7 +159,7 @@ class BinaryReader:
     def read_decimal10x5(self):
         from .common import Decimal10x5
 
-        return Decimal10x5(self.read_uint16(), raw=True)
+        return Decimal10x5(self.read_uint16())
 
 
 class NewSeek:

@@ -38,6 +38,7 @@ class ResFileParser:
             loader.read_bytes(32)  # reserved
         res_file.skeletal_anims = loader.load_dict_values(skeletal_anim.SkeletonAnim)
 
+        # Unimplemented
         res_file.material_anims = loader.read_offset()
         res_file.material_anims = loader.read_offset()
         res_file.bone_visibility_anims = loader.read_offset()

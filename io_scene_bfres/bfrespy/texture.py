@@ -1,4 +1,11 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from . import core
+
+if TYPE_CHECKING:
+    from .common import UserData
 
 
 class TextureShared(core.ResData):
@@ -14,7 +21,7 @@ class TextureShared(core.ResData):
         self.depth: int
         self.mipcount: int
         self.array_length: int
-        self.userdata: "UserData"
+        self.userdata: UserData
 
     def __repr__(self):
         return "TextureShared{" + str(self.name) + "}"
