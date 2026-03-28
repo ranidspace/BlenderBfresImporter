@@ -55,7 +55,10 @@ class VertexBufferParser:
         idx = loader.read_uint16()
         vtx_buffer.vtx_count = loader.read_uint32()
         vtx_buffer.vtx_skin_count = loader.read_uint16()
-        vtx_buffer.gpu_buff_align = loader.read_uint16()
+        if loader.res_file.version_major2 >= 10:
+            vtx_buffer.gpu_buff_align = loader.read_uint16()
+        else:
+            loader.read_uint16()  # padding
 
         # Buffers use the index buffer offset from memory info section.
         # This goes to a section in the memory pool which stores all the
@@ -73,6 +76,6 @@ class VertexBufferParser:
                 buffer.data = [b""]
                 buffer.stride = stride_array[buff].stride
 
-                loader.align(8)
+                loader.align(vtx_buffer.gpu_buff_align)
                 buffer.data[0] = loader.read_bytes(vtx_buff_size_array[buff].size)
                 vtx_buffer.buffers.append(buffer)
