@@ -25,6 +25,7 @@ class Importer:
         self.directory = self.filepath.parent
         self.filename = self.filepath.name
         self.fileext = self.filepath.suffix.upper()
+        self.texture_map = {}
         # Create work directories for temporary files.
 
     def run(self):
@@ -83,7 +84,7 @@ class Importer:
         return {"FINISHED"}
 
     def _import_bntx(self, stream):
-        """Import a BFRES file, and return 'FINISHED' if it succeeds"""
+        """Import a bntx file, and return 'FINISHED' if it succeeds"""
         from . import bntx
 
         bntx_ = bntx.BNTX(stream)

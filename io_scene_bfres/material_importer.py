@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 import logging
 
 import bpy
@@ -133,8 +134,9 @@ def __add_custom_properties(fmat, mat: bpy.types.Material):
     # Make Material Params
     for name, param in fmat.shaderparams.items():
         pname = "MP_" + name
-        if param.type.name in {"TEX_SRT", "TEX_SRT_EX"}:
-            mat[pname + "_mode"] = param.data.mode.name
+        if param.type.name in {"TEX_SRT", "TEX_SRT_EX", "SRT2D", "SRT3D"}:
+            if param.type.name in {"TEX_SRT", "TEX_SRT_EX"}:
+                mat[pname + "_mode"] = param.data.mode.name
             mat[pname + "_scaling"] = param.data.scaling
             mat[pname + "_rotation"] = param.data.rotation
             mat[pname + "_translation"] = param.data.translation
@@ -142,7 +144,10 @@ def __add_custom_properties(fmat, mat: bpy.types.Material):
             propman = mat.id_properties_ui(pname + "_scaling")
             propman.update(subtype="XYZ")
             propman = mat.id_properties_ui(pname + "_rotation")
-            propman.update(subtype="ANGLE")
+            if param.type.name == "SRT3D":
+                propman.update(subtype="EULER")
+            else:
+                propman.update(subtype="ANGLE")
             propman = mat.id_properties_ui(pname + "_translation")
             propman.update(subtype="XYZ")
         else:

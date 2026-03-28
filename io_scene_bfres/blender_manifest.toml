@@ -10,6 +10,11 @@ type = "add-on"
 
 tags = ["Import-Export"]
 
+dependencies = [
+  "numpy",
+  "zstandard",
+]
+
 blender_version_min = "4.2.0"
 
 license = ["SPDX:GPL-3.0-or-later"]
