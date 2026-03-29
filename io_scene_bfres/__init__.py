@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 bl_info = {
     "name": "BFRES Importer",
     "author": "ranidspace",
-    "version": (2, 1, 1),
+    "version": (2, 1, 0),
     "blender": (3, 6, 0),
     "category": "Import-Export",
 }
