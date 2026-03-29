@@ -1,1 +1,1 @@
-from . import bcn, rgb  # So subclasses are registered
+from . import astc, bcn, rgb  # So subclasses are registered

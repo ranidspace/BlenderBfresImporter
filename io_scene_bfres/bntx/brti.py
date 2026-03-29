@@ -37,7 +37,7 @@ class BRTI(core.ResData):
         self.multisample_cnt = loader.read_uint16()
         reserved = loader.read_uint16()
         self.fmt_dtype = BRTI.TextureDataType(loader.read_byte())
-        self.format_ = TextureFormat.get(loader.read_byte())()
+        self.fmt_id = loader.read_byte()
         loader.seek(2)
         access_flags = loader.read_uint32()
         self.width = loader.read_int32()
@@ -55,10 +55,10 @@ class BRTI(core.ResData):
         parent_offset = loader.read_offset()
         ptrs_offset = loader.read_offset()
 
-        self.fmt_id = self.format_._FORMAT_ID
+        self.format_ = TextureFormat.get(self.fmt_id)
         self.bpp = bpps[self.fmt_id]
 
-        if (self.fmt_id) in blk_dims:
+        if self.fmt_id in blk_dims:
             self.blk_width, self.blk_height = blk_dims[self.fmt_id]
         else:
             self.blk_width, self.blk_height = 1, 1

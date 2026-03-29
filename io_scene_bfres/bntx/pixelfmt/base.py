@@ -64,7 +64,11 @@ class TextureFormat:
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls.fmts[cls._FORMAT_ID] = cls
+        if isinstance(cls._FORMAT_ID, list):
+            for fmt_id in cls._FORMAT_ID:
+                cls.fmts[fmt_id] = cls
+        else:
+            cls.fmts[cls._FORMAT_ID] = cls
 
     @classmethod
     def register(cls, format_id: int):

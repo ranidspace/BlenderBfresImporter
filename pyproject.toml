@@ -3,11 +3,11 @@ name = "io_scene_bfres"
 requires-python = ">= 3.11.11"
 version = "2.1.1"
 dependencies = [
-    "astc-encoder-py>=0.1.12",
     "debugpy>=1.8.20",
     "fake-bpy-module-latest>=20260220",
     "numpy>=2.4.2",
     "pynvim>=0.6.0",
+    "texture2ddecoder>=1.0.6",
     "zstandard>=0.25.0",
 ]
 

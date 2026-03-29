@@ -34,6 +34,12 @@ This works if the bones on the imported skeleton and the existing selected skele
 
 Splatoon headgear will still have to be manually dealt with, though a couple work.
 
+## Dependencies
+
+This addon uses the `numpy` and `zstandard` python modules. Blender should come with it automatically, but on a distro like Arch which uses your system python, you may have to install it with your package manager (or use `blender-bin` on the AUR)
+
+It also includes wheels for [texture2ddecoder](https://github.com/K0lb3/texture2ddecoder).
+
 ## References
 
 This addon was originally a fork of [RenaKunisaki/bfres_importer](https://github.com/RenaKunisaki/bfres_importer)

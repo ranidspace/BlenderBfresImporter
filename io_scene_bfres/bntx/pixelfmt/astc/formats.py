@@ -3,16 +3,11 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from astc_encoder import (
-    ASTCConfig,
-    ASTCContext,
-    ASTCImage,
-    ASTCProfile,
-    ASTCSwizzle,
-    ASTCType,
-)
+import numpy as np
+from texture2ddecoder import decode_astc
 
 from ..base import TextureFormat
+from ..formatinfo import astc_formats
 
 log = logging.getLogger(__name__)
 
@@ -20,41 +15,18 @@ if TYPE_CHECKING:
     from ...brti import BRTI
 
 
-def decomp_astc(data: bytes, width: int, height: int, config: ASTCConfig):
-    context = ASTCContext(config)
-    swizzle = ASTCSwizzle.from_str("RGBA")
-
-    img_dec = ASTCImage(ASTCType.U8, width, height)
-    output = context.decompress(data, img_dec, swizzle)
-    return output.data
-
-
-class Astc5x5(TextureFormat):
-    _FORMAT_ID = 0x2F
+class Astc(TextureFormat):
+    _FORMAT_ID = astc_formats
 
     @staticmethod
     def decompress(tex: BRTI):
-        data = tex.mip_data
-        width = tex.width
-        height = tex.height
-
-        config = ASTCConfig(ASTCProfile.LDR_SRGB, 5, 5)
-
-        return decomp_astc(data, width, height, config)
-
-
-class Astc6x6(TextureFormat):
-    _FORMAT_ID = 0x31
+        return decode_astc(tex.mip_data, tex.width, tex.height, tex.blk_width, tex.blk_height)
 
     @staticmethod
-    def decompress(tex: BRTI):
-        data = tex.mip_data
-        width = tex.width
-        height = tex.height
-
-        config = ASTCConfig(ASTCProfile.LDR_SRGB, 6, 6)
-
-        return decomp_astc(data, width, height, config)
+    def decodepixels(data):
+        buffer = np.frombuffer(data, dtype="B").reshape((-1, 4)) / 255.0
+        buffer[:, [0, 2]] = buffer[:, [2, 0]]
+        return buffer
 
     # "ASTC4x4": {"id": 0x2D, "bpp": 16},
     # "ASTC5x4": {"id": 0x2E, "bpp": 16},
