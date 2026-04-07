@@ -48,21 +48,21 @@ class ImportBFRES(bpy.types.Operator, ImportHelper):
         options={"HIDDEN"},
     )
 
-    files: CollectionProperty(
-        name="File Path",
-        type=bpy.types.OperatorFileListElement,
-    )
-
     ui_tab: EnumProperty(
         items=(("MAIN", "Main", "Main basic settings"),),
         name="ui_tab",
         description="Import options categories",
     )
 
-    import_tex_file: BoolProperty(
-        name="Import .Tex File",
-        description="Import textures from a .Tex file with same name, if it exists.",
-        default=True,
+    import_tex_mode: EnumProperty(
+        name="Texture Import Mode",
+        items = (
+            ("EMBEDDED", "Embedded", "Import textures embedded in the model file."),
+            ("TEX_FILE", ".Tex File", "Imports from a .tex file in the same directory"),
+            ("TEX_FOLDER", "Tex Folder", "Imports from a tex folder in the parent directory"),
+            ),
+        description="How should textures be imported, different depending on the game.",
+        default="EMBEDDED",
     )
 
     copy_bone_transforms: BoolProperty(
@@ -139,13 +139,6 @@ class ImportBFRES(bpy.types.Operator, ImportHelper):
 
         from .importing import Importer
 
-        if self.import_tex_file:
-            texpath, ext = os.path.splitext(self.filepath)
-            texpath = texpath + ".Tex" + ext
-            if os.path.exists(texpath):
-                log.info("Importing linked file: %s", texpath)
-                importer = Importer(self, path)
-                importer.run()
 
         log.info("importing: %s", path)
         importer = Importer(self, path)
@@ -160,7 +153,7 @@ def import_panel_textures(layout, operator):
         layout.label(text="Textures")
         body = layout.column(align=False)
     if body:
-        body.prop(operator, "import_tex_file")
+        body.prop(operator, "import_tex_mode")
         body.prop(operator, "component_selector")
 
 

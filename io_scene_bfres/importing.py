@@ -32,6 +32,10 @@ class Importer:
         with open(self.filepath, "rb") as f:
             return self._load_stream(f)
 
+    def run_file(self, filepath: str | Path):
+        with open(filepath, "rb") as f:
+            return self._load_stream(f)
+
     def _load_stream(self, raw) -> set:
         """Check if the stream is decompressed, and then check if it's an archive"""
         # Ensure to have a stream with decompressed data.
@@ -62,9 +66,30 @@ class Importer:
         """Import a BFRES file, and return 'FINISHED' if it succeeds"""
         bfres = ResFile(stream)
         self.bfres = bfres
+
         # Read and import any external files
         for node in bfres.external_files:
             self._import_embed(node, bfres.name)
+
+        if self.operator.import_tex_mode == "TEX_FILE":
+            texpath = Path(self.filepath).stem
+            ext = Path(self.filepath).suffix
+            texpath = texpath + ".Tex" + ext
+            if Path(texpath).is_file():
+                log.info("Importing linked file: %s", texpath)
+                self.run_file(texpath)
+
+        if self.operator.import_tex_mode == "TEX_FOLDER":
+            texfolder = Path(self.filepath).parents[1].joinpath("Tex")
+            ext = Path(self.filepath).suffix
+            for model in bfres.models.values():
+                for fmat in model.materials.values():
+                    for tex in fmat.texture_refs:
+                        texpath = texfolder.joinpath(tex.name).with_suffix(".bntx" + ext)
+                        log.debug("Looking for: %s", texpath)
+                        if texpath.is_file():
+                            log.info("Importing file from Tex folder: %s", texpath)
+                            self.run_file(texpath)
 
         if self.operator.import_anims:
             anim_imp = BoneAnimationImporter(self)
@@ -86,12 +111,11 @@ class Importer:
     def _import_bntx(self, stream):
         """Import a bntx file, and return 'FINISHED' if it succeeds"""
         from . import bntx
+        from .texture_importer import import_textures
 
         bntx_ = bntx.BNTX(stream)
 
-        from .texture_importer import import_textures
-
-        self.texture_map = import_textures(bntx_, self.operator)
+        self.texture_map.update(import_textures(bntx_, self.operator))
 
         return {"FINISHED"}
 
