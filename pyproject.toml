@@ -1,14 +1,11 @@
 [project]
 name = "io_scene_bfres"
-requires-python = ">= 3.11.11"
+requires-python = ">= 3.11.7"
 version = "2.1.1"
 dependencies = [
-    "debugpy>=1.8.20",
-    "fake-bpy-module-latest>=20260220",
-    "numpy>=2.4.2",
-    "pynvim>=0.6.0",
+    "numpy>=1.24.3",
     "texture2ddecoder>=1.0.6",
-    "zstandard>=0.25.0",
+    "zstandard>=0.16.0",
 ]
 
 [tool.ruff]
@@ -18,4 +15,11 @@ line-length = 120
 
 ignore = [
     "E721", "E722", "E402",
+]
+
+[dependency-groups]
+dev = [
+    "debugpy>=1.8.20",
+    "fake-bpy-module-latest>=20260220",
+    "pynvim>=0.6.0",
 ]

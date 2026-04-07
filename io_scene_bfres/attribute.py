@@ -20,7 +20,7 @@ class AttributeFormat:
     def __init__(self, value: int):
         read = self.__READ_FORMAT[value & 0x00FF]
         self.flags = self.AttribType(value & 0xFF00)
-        if type(read) is tuple:
+        if isinstance(read, tuple):
             self.read: str = read[0]
             self.func = read[1]
             self.min = None

@@ -77,7 +77,7 @@ class Decimal10x5:
         raise TypeError("Decimal10x5 can only be multiplied by int or itself")
 
     def __truediv__(self, other: int | Decimal10x5):
-        if type(other) is Decimal10x5:
+        if isinstance(other, Decimal10x5):
             return Decimal10x5((self.raw << self._N) // other.raw)
         if isinstance(other, int):
             return Decimal10x5(self.raw // other)
