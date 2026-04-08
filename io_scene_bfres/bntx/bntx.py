@@ -15,6 +15,8 @@ class BNTX(core.ResData):
     def __init__(self, stream: io.BytesIO):
         from ..bfrespy.switch.switchcore import ResFileSwitchLoader
 
+        self.nx: NX
+
         with ResFileSwitchLoader(self, stream) as loader:
             self.load(loader)
 

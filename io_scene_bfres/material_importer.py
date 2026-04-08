@@ -54,7 +54,6 @@ def import_material(fmat: Material, texture_dict, name_prefix) -> bpy.types.Mate
             continue
 
         tex_sampler_name = fmat.shader_assign.sampler_assigns.key_from_value(ResString(sampler))
-        log.debug(tex_sampler_name)
         i += 1
 
         # Get the bpy Texture Wrapper from the sampler name

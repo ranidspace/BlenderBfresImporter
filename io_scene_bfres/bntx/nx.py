@@ -11,7 +11,7 @@ class NX(core.ResData):
     """An NX texture in a BNTX."""
 
     def __init__(self):
-        self.textures = []
+        self.textures: list[BRTI] = []
 
     def load(self, loader: core.ResFileLoader):
         target_platform = loader.read_raw_string(4, "ascii")

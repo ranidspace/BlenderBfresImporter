@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 import logging
-from typing import ClassVar, TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 import numpy as np
 
@@ -62,6 +62,7 @@ class TextureFormat:
     fmts: ClassVar[dict[int, type[TextureFormat]]] = {}
     _FORMAT_ID = -1
 
+    @classmethod
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         if isinstance(cls._FORMAT_ID, list):
@@ -76,7 +77,7 @@ class TextureFormat:
             cls.fmts[format_id] = fmt
 
     @classmethod
-    def get(cls, format_id):
+    def get(cls, format_id: int) -> type[TextureFormat]:
         if format_id not in cls.fmts:
             msg = f"Unsupported texture format {hex(format_id)}"
             raise TypeError(msg)
@@ -98,7 +99,7 @@ class TextureFormat:
         return pixels
 
     @staticmethod
-    def decodepixels(data):
+    def decodepixels(data) -> np.ndarray:
         return np.frombuffer(data, dtype="B") / 255.0
 
     def __str__(self):

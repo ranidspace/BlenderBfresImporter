@@ -74,7 +74,7 @@ class ImportBFRES(bpy.types.Operator, ImportHelper):
     component_selector: BoolProperty(
         name="Use Component Selector",
         description="Uses the component selector for each texture. Turn it on if the colours look off",
-        default=False,
+        default=True,
     )
 
     custom_normals: BoolProperty(
