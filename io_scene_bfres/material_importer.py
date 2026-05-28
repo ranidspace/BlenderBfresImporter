@@ -108,7 +108,7 @@ def set_uv_coords(mat: bpy.types.Material, sampler: str, tex_node: bpy.types.Sha
     if selector is None:
         return
     uv_id = mat.get("SO_texcoord_select_" + selector)
-    if uv_id and uv_id != "0":
+    if uv_id and uv_id.isdigit() and uv_id != "0":
         tree = mat.node_tree
 
         uv_node = tree.nodes.new(type="ShaderNodeUVMap")
