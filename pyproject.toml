@@ -14,7 +14,7 @@ line-length = 120
 [tool.ruff.lint]
 
 ignore = [
-    "E721", "E722", "E402",
+    "E721", "E722", "E402", "RUF067",
 ]
 
 [dependency-groups]
